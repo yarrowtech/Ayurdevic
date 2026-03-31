@@ -1,0 +1,44 @@
+@import "tailwindcss";
+
+/* Global Fonts */
+* {
+  font-family: Outfit, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+.font-heading {
+  font-family: "Prata", serif;
+}
+
+.font-body {
+  font-family: "Outfit", sans-serif;
+}
+
+/* Ayurvedic Minimal Palette */
+:root {
+  /* --paper:       #FAF8F4; */
+  --paper: #ecf7dd;
+  --herbal:      #4CAF50;
+  --herbal-dark: #388E3C;
+  --clay:        #E6DCC6;
+  --ink:         #2F2F2F;
+}
+
+body {
+  background: var(--paper);
+  color: var(--ink);
+}
+
+/* Keyframes for pulsing glow */
+@keyframes pulse-glow {
+  0%, 100% {
+    box-shadow: 0 0 30px 10px rgba(76, 175, 80, 0.25);
+  }
+  50% {
+    box-shadow: 0 0 70px 25px rgba(76, 175, 80, 0.45);
+  }
+}
+
+.animate-pulse-glow {
+  animation: pulse-glow 4s ease-in-out infinite;
+  border-radius: 50%; /* ensures smooth glow around ellipse */
+}
