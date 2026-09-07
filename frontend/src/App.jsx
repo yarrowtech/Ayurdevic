@@ -39,27 +39,30 @@ import AllProducts from './pages/AllProducts';
 import ProductCategory from './pages/ProductCategory';
 import ProductDetails from './pages/ProductDetails';
 import Cart from './pages/Cart';
+import Admin from './pages/Admin';
 
 const App = () => {
   const isSellerPath = useLocation().pathname.includes("seller");
+  const isAdminPath = /^\/admin(?:\/|$)/.test(useLocation().pathname);
   const { showUserLogin } = useAppContext();
  
   return (
     <div className="font-body bg-paper text-ink min-h-screen flex flex-col">
-      {!isSellerPath && <Navbar />}
+      {!isSellerPath && !isAdminPath && <Navbar />}
       {showUserLogin ? <Login /> : null}
       <Toaster position="top-right" />
       
-      <main className={`${isSellerPath ? "" : "px-6 md:px-16 lg:px-24 xl:px-32"} flex-grow`}>
+      <main className={`${isSellerPath || isAdminPath ? "" : "px-6 md:px-16 lg:px-24 xl:px-32"} flex-grow`}>
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/products" element={<AllProducts />} />
           <Route path="/products/:category" element={<ProductCategory />} />
           <Route path="/products/:category/:id" element={<ProductDetails />} />
           <Route path='/cart' element={<Cart />} />
+          <Route path='/admin/*' element={<Admin />} />
         </Routes>
       </main>
-      <Footer />
+      {!isAdminPath && <Footer />}
     </div>
   )
 }

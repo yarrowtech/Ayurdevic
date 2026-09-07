@@ -5,12 +5,7 @@ import { useAppContext } from '../context/AppContext';
 
 const Navbar = () => {
   const [open, setOpen] = useState(false);
-  const { user, setUser, setShowUserLogin, navigate, setSearchQuery, searchQuery, getCartCount } = useAppContext();
-
-  const logout = async () => {
-    setUser(null);
-    navigate('/');
-  }
+  const { user, setShowUserLogin, navigate, setSearchQuery, searchQuery, getCartCount, logout } = useAppContext();
 
   useEffect(()=> {
     if (searchQuery.length > 0) {
@@ -116,6 +111,7 @@ const Navbar = () => {
         </div>
 
         {/* Auth */}
+        {user?.role === 'admin' && <NavLink to="/admin">Admin</NavLink>}
         {!user ? (
           <button
             onClick={() => setShowUserLogin(true)}
@@ -222,6 +218,8 @@ const Navbar = () => {
               )}
             </NavLink>
           )}
+
+          {user?.role === 'admin' && <NavLink to="/admin" onClick={() => setOpen(false)}>Admin panel</NavLink>}
 
           <NavLink to="/contact" onClick={() => setOpen(false)}>
             {({ isActive }) => (

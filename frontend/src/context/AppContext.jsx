@@ -1,7 +1,8 @@
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { dummyProducts } from "../assets/assets";
+import api from "../services/api";
 import toast from "react-hot-toast";
+import { checkAuth, logoutUser } from "../services/userService";
 
 export const AppContext = createContext();
 
@@ -16,8 +17,40 @@ export const AppContextProvider = ({ children }) => {
     const [searchQuery, setSearchQuery] = useState("");
 
     // Fetch all products
-    const fecthProducts = async () => {
-        setProducts(dummyProducts)
+    const refreshProducts = useCallback(async () => {
+        try {
+            const { data } = await api.get('/api/products');
+            setProducts(data.products);
+            setCartItems(current => Object.fromEntries(
+                Object.entries(current).filter(([id]) => data.products.some(product => product._id === id))
+            ));
+        } catch {
+            toast.error('Unable to load products. Check the backend connection.');
+        }
+    }, []);
+
+    // Check if user is already logged in
+    const fetchUser = async () => {
+        try {
+            const data = await checkAuth();
+            if (data.success) {
+                setUser(data.user);
+            }
+        } catch {
+            setUser(null);
+        }
+    }
+
+    // Log the user out
+    const logout = async () => {
+        try {
+            await logoutUser();
+            setUser(null);
+            toast.success("Logged out");
+            navigate("/");
+        } catch (error) {
+            toast.error(error?.response?.data?.message || "Something went wrong");
+        }
     }
 
     // Add product to cart
@@ -67,7 +100,7 @@ export const AppContextProvider = ({ children }) => {
         let totalAmount = 0;
         for(const items in cartItems){
             let itemInfo = products.find((product) => product._id === items);
-            if(cartItems[items] > 0){
+            if(itemInfo && cartItems[items] > 0){
                 totalAmount += itemInfo.offerPrice * cartItems[items];
             }
         }
@@ -75,10 +108,11 @@ export const AppContextProvider = ({ children }) => {
     }
 
     useEffect(() => {
-        fecthProducts();
-    }, []);
+        fetchUser();
+        refreshProducts();
+    }, [refreshProducts]);
 
-    const value = { navigate, user, setUser, isSeller, setIsSeller, showUserLogin, setShowUserLogin, products, currency, addToCart, updateCartItem, removeFromCart, cartItems, searchQuery, setSearchQuery, getCartAmount, getCartCount };
+    const value = { navigate, user, setUser, logout, isSeller, setIsSeller, showUserLogin, setShowUserLogin, products, currency, addToCart, updateCartItem, removeFromCart, cartItems, searchQuery, setSearchQuery, getCartAmount, getCartCount, refreshProducts };
     return <AppContext.Provider value={value}>
         {children}
     </AppContext.Provider>;

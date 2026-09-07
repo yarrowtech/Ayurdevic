@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { useAppContext } from '../context/AppContext';
 import { Toaster, toast } from 'react-hot-toast';
+import { loginUser, registerUser } from '../services/userService';
 
 const Login = () => {
   const { setShowUserLogin, setUser } = useAppContext();
@@ -60,16 +61,22 @@ const Login = () => {
     try {
       setSubmitting(true);
 
-      // 👉 Keep your original success flow EXACTLY the same:
-      setUser({
-        email: 'test@gmail.com',
-        name: 'test',
-      });
+      const data =
+        state === 'register'
+          ? await registerUser({ name: name.trim(), email: email.trim(), password })
+          : await loginUser({ email: email.trim(), password });
+
+      if (!data.success) {
+        toast.error(data.message || 'Something went wrong. Please try again.');
+        return;
+      }
+
+      setUser(data.user);
       setShowUserLogin(false);
 
       toast.success(state === 'register' ? 'Account created!' : 'Logged in!');
     } catch (err) {
-      toast.error('Something went wrong. Please try again.');
+      toast.error(err?.response?.data?.message || 'Something went wrong. Please try again.');
     } finally {
       setSubmitting(false);
     }

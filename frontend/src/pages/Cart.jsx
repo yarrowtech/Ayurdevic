@@ -3,7 +3,7 @@ import { useAppContext } from "../context/AppContext"
 import { assets, dummyAddress } from "../assets/assets";
 
 const Cart = () => {
-    const { products, currency, cartItems, removeFromCart, getCartCount, updateCartItems, navigate, getCartAmount } = useAppContext();
+    const { products, currency, cartItems, removeFromCart, getCartCount, updateCartItem, navigate, getCartAmount } = useAppContext();
     const [cartArray, setCartArray] = useState([]);
     const [addresses, setAddresses] = useState(dummyAddress);
     const [showAddress, setShowAddress] = useState(false);
@@ -14,14 +14,13 @@ const Cart = () => {
         let tempArray = [];
         for(const key in cartItems){
             const product = products.find((item)=>item._id === key)
-            product.quantity = cartItems[key]
-            tempArray.push(product);
+            if (product) tempArray.push({ ...product, quantity: cartItems[key] });
         }
         setCartArray(tempArray)
     }
 
     useEffect(()=>{
-        if(products.length > 0 && cartItems){
+        if(cartItems){
             getCart()
         }
     }, [products, cartItems]);
@@ -30,7 +29,7 @@ const Cart = () => {
         <div className="flex flex-col md:flex-row mt-16">
             <div className='flex-1 max-w-4xl'>
                 <h1 className="text-3xl font-medium mb-6">
-                    Shopping Cart <span className="text-sm text-">{getCartCount} Items</span>
+                    Shopping Cart <span className="text-sm">{getCartCount()} Items</span>
                 </h1>
 
                 <div className="grid grid-cols-[2fr_1fr_1fr] text-gray-500 text-base font-medium pb-3">
@@ -51,7 +50,12 @@ const Cart = () => {
                                     <p>Weight: <span>{product.weight || "N/A"}</span></p>
                                     <div className='flex items-center'>
                                         <p>Qty:</p>
-                                        <select className='outline-none'>
+                                        <select
+                                            className='outline-none'
+                                            aria-label={`Quantity for ${product.name}`}
+                                            value={cartItems[product._id]}
+                                            onChange={(event) => updateCartItem(product._id, Number(event.target.value))}
+                                        >
                                             {Array(cartItems[product._id] > 9 ? cartItems[product._id] : 9).fill('').map((_, index) => (
                                                 <option key={index} value={index + 1}>{index + 1}</option>
                                             ))}
@@ -61,13 +65,13 @@ const Cart = () => {
                             </div>
                         </div>
                         <p className="text-center">{currency} {product.offerPrice * product.quantity}</p>
-                        <button onClick={()=> removeFromCart()} className="cursor-pointer mx-auto">
+                        <button onClick={()=> removeFromCart(product._id)} className="cursor-pointer mx-auto">
                             <img src={assets.remove_icon} alt="remove" className="inline-block w-6 h-6" />
                         </button>
                     </div>)
                 )}
 
-                <button onClick={()=> {navigate("/product"); scrollTo(0, 0);}} className="group cursor-pointer flex items-center mt-8 gap-2 text-indigo-500 font-medium">
+                <button onClick={()=> {navigate("/products"); scrollTo(0, 0);}} className="group cursor-pointer flex items-center mt-8 gap-2 text-indigo-500 font-medium">
                     <img src={assets.arrow_right_icon_colored} alt="arrow" className="group-hover:-translate-x-1 transition" />
                     Continue Shopping
                 </button>
