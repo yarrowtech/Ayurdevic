@@ -121,7 +121,7 @@
 //                         className="w-full h-full object-cover relative z-10"
 //                     />
 //                 </div>
-//             </div> 
+//             </div>
 //         </section>
 //     )
 // }
@@ -141,16 +141,16 @@ const Hero = () => {
         </div>
       </div>
 
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 pt-14 md:pt-20">
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-10 md:gap-12 items-center">
+      <div className="mx-auto max-w-7xl pt-8 sm:pt-12 lg:pt-20">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-12 items-center">
           {/* Left: Content */}
-          <div className="md:col-span-6 lg:col-span-6">
-            <div className="inline-flex items-center gap-2 rounded-full border border-[var(--clay)]/80 bg-white/80 px-3 py-1 text-xs tracking-wide text-[var(--ink)]/80">
+          <div className="lg:col-span-6">
+            <div className="inline-flex max-w-full items-center gap-2 rounded-full border border-[var(--clay)]/80 bg-white/80 px-3 py-1 text-xs tracking-wide text-[var(--ink)]/80">
               <span className="inline-block h-2.5 w-2.5 rounded-full bg-[var(--herbal)]" />
               Handcrafted • Small-batch • Eco-friendly
             </div>
 
-            <h1 className="mt-5 font-heading text-4xl leading-tight text-[var(--ink)] md:text-5xl lg:text-6xl">
+            <h1 className="mt-5 font-heading text-3xl sm:text-4xl leading-tight text-[var(--ink)] lg:text-5xl xl:text-6xl">
               Serenity, the{" "}
               <span className="text-[var(--herbal)]">Ayurvedic</span> way
             </h1>
@@ -213,7 +213,7 @@ const Hero = () => {
           </div>
 
           {/* Right: Visual */}
-          <div className="md:col-span-6 lg:col-span-6">
+          <div className="lg:col-span-6">
             <div className="relative mx-auto w-full max-w-xl md:max-w-2xl">
               <div
                 className="relative w-full h-80 md:h-[28rem] lg:h-[32rem] overflow-hidden shadow-[0_20px_40px_-20px_rgba(0,0,0,0.25)] animate-pulse-glow"

@@ -80,12 +80,19 @@ export const login = async (req, res) => {
   }
 };
 
-// GET /api/user/is-auth (requires authUser middleware)
+// Public session status. Protected routes still require authUser.
 export const isAuth = async (req, res) => {
+  const token = req.cookies?.token;
+  const guest = () => res.json({ success: true, user: null });
+  if (!token) return guest();
+  let userId;
+  try { userId = jwt.verify(token, process.env.JWT_SECRET).id; }
+  catch { return guest(); }
+  if (!userId || typeof userId !== "string" || !/^[a-f\d]{24}$/i.test(userId)) return guest();
   try {
-    const user = await User.findById(req.userId).select("-password");
+    const user = await User.findById(userId).select("-password");
     if (!user) {
-      return res.status(404).json({ success: false, message: "User not found" });
+      return guest();
     }
     return res.json({ success: true, user });
   } catch (error) {

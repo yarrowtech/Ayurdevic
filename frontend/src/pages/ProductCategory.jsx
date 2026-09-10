@@ -1,16 +1,15 @@
 import React from 'react'
 import { useAppContext } from '../context/AppContext'
 import { useParams } from 'react-router-dom';
-import { categories } from '../assets/assets';
 import ProductCard from '../components/ProductCard';
-import { Toaster } from 'react-hot-toast';
+
 
 const ProductCategory = () => {
-  const { products } = useAppContext();
+  const { products, categories } = useAppContext();
   const { category } = useParams();
 
   const searchCategory = categories.find(
-    (item) => item.path.toLowerCase() === category.toLowerCase()
+    (item) => item.key === category.toLowerCase()
   );
 
   const filteredProducts = products.filter(
@@ -21,29 +20,30 @@ const ProductCategory = () => {
 
   return (
     <div className="mt-16">
-      <Toaster position='top-right' />
+
       {searchCategory && (
-        <div className="flex flex-col items-end w-max">
-          <p className="text-2xl font-medium">
-            {searchCategory.text.toUpperCase()}
+        <div className="flex flex-col items-start max-w-full">
+          <p className="text-2xl font-medium break-words max-w-full">
+            {searchCategory.name.toUpperCase()}
           </p>
           <div className="w-16 h-0.5 bg-black rounded-full"></div>
+          {searchCategory.offer && <p className="mt-3 rounded-lg bg-green-100 px-4 py-2 text-sm text-green-800">{searchCategory.offer}</p>}
         </div>
       )}
-      
+
       {filteredProducts.length > 0 ? (
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 md:gap-6 lg:grid-cols-5 mt-6">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4 lg:gap-6 mt-6">
         {filteredProducts.map((product) => (
           <ProductCard key={product._id} product={product} />
         ))}
       </div>
       ) : (
         <div className='flex items-center justify-center h-[60vh]'>
-            <p className='text-2xl font-medium text-black'>No products found in this category</p>
+            <p className='text-2xl font-medium break-words max-w-full text-black'>No products found in this category</p>
         </div>
       )}
       {/* Show filtered products */}
-      
+
     </div>
   );
 };

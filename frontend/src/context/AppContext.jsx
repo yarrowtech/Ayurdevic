@@ -13,6 +13,11 @@ export const AppContextProvider = ({ children }) => {
     const [isSeller, setIsSeller] = useState(false);
     const [showUserLogin, setShowUserLogin] = useState(false);
     const [products, setProducts] = useState([]);
+    const [categories, setCategories] = useState([]);
+    const refreshCategories = useCallback(async () => {
+        try { setCategories((await api.get('/api/categories')).data.categories); }
+        catch { toast.error('Unable to load categories.'); }
+    }, []);
     const [cartItems, setCartItems] = useState({});
     const [searchQuery, setSearchQuery] = useState("");
 
@@ -110,10 +115,11 @@ export const AppContextProvider = ({ children }) => {
     useEffect(() => {
         fetchUser();
         refreshProducts();
-    }, [refreshProducts]);
+        refreshCategories();
+    }, [refreshProducts, refreshCategories]);
 
     const value = { navigate, user, setUser, logout, isSeller, setIsSeller, showUserLogin, setShowUserLogin, products, currency, addToCart, updateCartItem, removeFromCart, cartItems, searchQuery, setSearchQuery, getCartAmount, getCartCount, refreshProducts };
-    return <AppContext.Provider value={value}>
+    return <AppContext.Provider value={{ ...value, categories, refreshCategories }}>
         {children}
     </AppContext.Provider>;
 }

@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { useAppContext } from '../context/AppContext';
-import { Toaster, toast } from 'react-hot-toast';
+import { toast } from 'react-hot-toast';
 import { loginUser, registerUser } from '../services/userService';
 
 const Login = () => {
@@ -85,21 +85,22 @@ const Login = () => {
   return (
     <div
       onClick={() => setShowUserLogin(false)}
-      className="fixed inset-0 z-[80] flex items-center text-sm bg-black/50"
+      className="fixed inset-0 z-[80] flex items-center overflow-y-auto p-4 text-sm bg-black/50"
     >
       {/* Local toaster (you can keep a global one too) */}
-      <Toaster position="top-right" />
+
 
       <form
         onSubmit={onSubmitHandler}
         onClick={(e) => e.stopPropagation()}
         className="
-          flex flex-col gap-4 m-auto items-start w-80 sm:w-[352px]
-          p-8 py-12 rounded-lg shadow-xl
+          relative flex flex-col gap-4 m-auto items-start w-full max-w-[352px] max-h-[calc(100dvh-2rem)] overflow-y-auto
+          p-5 py-8 sm:p-8 rounded-lg shadow-xl
           border border-[var(--clay)]/70
           bg-[var(--paper)] text-[var(--ink)]
         "
       >
+        <button type="button" aria-label="Close sign in" onClick={() => setShowUserLogin(false)} className="absolute right-1 top-1 flex h-11 w-11 items-center justify-center rounded text-xl">×</button>
         <p className="text-2xl font-medium m-auto">
           <span className="text-[var(--herbal)]">User</span>{' '}
           {state === 'login' ? 'Login' : 'Sign Up'}

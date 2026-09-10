@@ -5,6 +5,8 @@ import authAdmin from "../middleware/authAdmin.js";
 import User from "../model/User.modal.js";
 import Product from "../model/Product.js";
 import { validateProduct } from "../configs/validateProduct.js";
+import { imageUpload } from "../configs/imageUpload.js";
+import categoryRouter from "./category.Route.js";
 
 const router = express.Router();
 router.use(authUser, authAdmin);
@@ -16,6 +18,8 @@ router.use((req, res, next) => {
   }
   next();
 });
+router.post("/images", ...imageUpload);
+router.use("/categories", categoryRouter);
 router.get("/overview", async (req, res) => {
   try {
     const [users, products, inStock] = await Promise.all([

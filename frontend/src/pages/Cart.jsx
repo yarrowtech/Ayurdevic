@@ -1,57 +1,42 @@
-import { useEffect, useState } from "react"
+import { useState } from "react"
 import { useAppContext } from "../context/AppContext"
-import { assets, dummyAddress } from "../assets/assets";
+import { assets } from "../assets/assets";
 
 const Cart = () => {
-    const { products, currency, cartItems, removeFromCart, getCartCount, updateCartItem, navigate, getCartAmount } = useAppContext();
-    const [cartArray, setCartArray] = useState([]);
-    const [addresses, setAddresses] = useState(dummyAddress);
+    const { products, currency, cartItems, removeFromCart, getCartCount, updateCartItem, navigate } = useAppContext();
     const [showAddress, setShowAddress] = useState(false);
-    const [selectedAddress, setSelectedAddress] = useState(dummyAddress[0]);
-    const [paymentOption, setPaymentOption] = useState("COD");
-
-    const getCart = ()=> {
-        let tempArray = [];
-        for(const key in cartItems){
-            const product = products.find((item)=>item._id === key)
-            if (product) tempArray.push({ ...product, quantity: cartItems[key] });
-        }
-        setCartArray(tempArray)
-    }
-
-    useEffect(()=>{
-        if(cartItems){
-            getCart()
-        }
-    }, [products, cartItems]);
+    const cartArray = Object.entries(cartItems).flatMap(([id, quantity]) => {
+        const product = products.find(item => item._id === id);
+        return product ? [{ ...product, quantity }] : [];
+    });
 
     return products.length > 0 && cartItems ? (
-        <div className="flex flex-col md:flex-row mt-16">
-            <div className='flex-1 max-w-4xl'>
+        <div className="flex flex-col lg:flex-row gap-8 mt-8 sm:mt-16">
+            <div className='flex-1 min-w-0'>
                 <h1 className="text-3xl font-medium mb-6">
                     Shopping Cart <span className="text-sm">{getCartCount()} Items</span>
                 </h1>
 
-                <div className="grid grid-cols-[2fr_1fr_1fr] text-gray-500 text-base font-medium pb-3">
+                <div className="hidden sm:grid grid-cols-[minmax(0,1fr)_6rem_4rem] gap-3 text-gray-500 text-sm font-medium pb-3">
                     <p className="text-left">Product Details</p>
                     <p className="text-center">Subtotal</p>
                     <p className="text-center">Action</p>
                 </div>
 
                 {cartArray.map((product, index) => (
-                    <div key={index} className="grid grid-cols-[2fr_1fr_1fr] text-gray-500 items-center text-sm md:text-base font-medium pt-3">
-                        <div className="flex items-center md:gap-6 gap-3">
-                            <div onClick={()=>{navigate(`/products/${product.category.toLowerCase()}/${product._id}`); scrollTo(0, 0)}} className="cursor-pointer w-24 h-24 flex items-center justify-center border border-gray-300 rounded overflow-hidden">
-                                <img className="max-w-full h-full object-cover" src={product.image[0]} alt={product.name} />
+                    <div key={index} className="grid grid-cols-[minmax(0,1fr)_auto] sm:grid-cols-[minmax(0,1fr)_6rem_4rem] gap-3 text-gray-500 items-center text-sm font-medium py-4 border-b border-gray-300/60">
+                        <div className="col-span-2 sm:col-span-1 min-w-0 flex items-center gap-3">
+                            <div onClick={()=>{navigate(`/products/${product.category.toLowerCase()}/${product._id}`); scrollTo(0, 0)}} className="cursor-pointer shrink-0 w-20 h-20 flex items-center justify-center border border-gray-300 rounded overflow-hidden">
+                                <img className="w-full h-full object-contain" src={product.image[0]} alt={product.name} />
                             </div>
-                            <div>
-                                <p className="hidden md:block font-semibold">{product.name}</p>
+                            <div className="min-w-0">
+                                <p className="break-words font-semibold">{product.name}</p>
                                 <div className="font-normal text-gray-500/70">
                                     <p>Weight: <span>{product.weight || "N/A"}</span></p>
                                     <div className='flex items-center'>
                                         <p>Qty:</p>
                                         <select
-                                            className='outline-none'
+                                            className='min-h-11 min-w-14 rounded px-2 outline-none'
                                             aria-label={`Quantity for ${product.name}`}
                                             value={cartItems[product._id]}
                                             onChange={(event) => updateCartItem(product._id, Number(event.target.value))}
@@ -64,8 +49,8 @@ const Cart = () => {
                                 </div>
                             </div>
                         </div>
-                        <p className="text-center">{currency} {product.offerPrice * product.quantity}</p>
-                        <button onClick={()=> removeFromCart(product._id)} className="cursor-pointer mx-auto">
+                        <p className="break-words sm:text-center"><span className="sm:hidden">Subtotal: </span>{currency} {product.offerPrice * product.quantity}</p>
+                        <button aria-label={`Remove ${product.name}`} onClick={()=> removeFromCart(product._id)} className="cursor-pointer min-h-11 min-w-11 mx-auto">
                             <img src={assets.remove_icon} alt="remove" className="inline-block w-6 h-6" />
                         </button>
                     </div>)
@@ -78,7 +63,7 @@ const Cart = () => {
 
             </div>
 
-            <div className="max-w-[360px] w-full bg-gray-100/40 p-5 max-md:mt-16 border border-gray-300/70">
+            <div className="lg:max-w-[320px] xl:max-w-[360px] w-full shrink-0 self-start bg-gray-100/40 p-5 border border-gray-300/70">
                 <h2 className="text-xl md:text-xl font-medium">Order Summary</h2>
                 <hr className="border-gray-300 my-5" />
 

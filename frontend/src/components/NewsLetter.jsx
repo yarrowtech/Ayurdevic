@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from "react";
-import { Toaster, toast } from "react-hot-toast";
+import { toast } from "react-hot-toast";
 
 const NewsLetter = () => {
   const [email, setEmail] = useState("");
@@ -45,7 +45,7 @@ const NewsLetter = () => {
 
       toast.success("Subscribed! You’ll now receive our best deals.");
       setEmail("");
-    } catch (err) {
+    } catch {
       toast.error("Something went wrong. Please try again.");
     } finally {
       setSubmitting(false);
@@ -53,9 +53,9 @@ const NewsLetter = () => {
   };
 
   return (
-    <div className="flex flex-col items-center justify-center text-center space-y-2 mt-24 p-14">
+    <div className="flex flex-col items-center justify-center text-center space-y-2 mt-16 px-0 py-8 sm:px-6 md:mt-24 md:p-10">
       {/* Local toaster for this section (or move one Toaster to App root) */}
-      <Toaster position="top-right" />
+
 
       <h1 className="md:text-4xl text-2xl font-semibold">Never Miss a Deal!</h1>
       <p className="md:text-lg text-gray-500/70 pb-8">
@@ -64,11 +64,11 @@ const NewsLetter = () => {
 
       <form
         onSubmit={handleSubmit}
-        className="flex items-center justify-between max-w-2xl w-full md:h-13 h-12"
+        className="flex flex-col sm:flex-row gap-2 sm:gap-0 max-w-2xl w-full"
         noValidate
       >
         <input
-          className="bg-white border border-gray-300 rounded-md h-full border-r-0 outline-none w-full rounded-r-none px-3 text-gray-700"
+          className="bg-white border border-gray-300 rounded-md min-h-12 sm:border-r-0 outline-none min-w-0 w-full sm:rounded-r-none px-3 text-gray-700"
           type="email"
           inputMode="email"
           autoComplete="email"
@@ -82,7 +82,7 @@ const NewsLetter = () => {
         <button
           type="submit"
           disabled={submitting}
-          className={`bg-[var(--herbal)] md:px-12 px-8 h-full text-white bg-primary hover:bg-primary-dull transition-all cursor-pointer rounded-md rounded-l-none
+          className={`bg-[var(--herbal)] md:px-12 px-6 min-h-12 shrink-0 text-white bg-primary hover:bg-primary-dull transition-all cursor-pointer rounded-md sm:rounded-l-none
             ${submitting ? "opacity-70 cursor-not-allowed" : ""}`}
         >
           {submitting ? "Subscribing..." : "Subscribe"}

@@ -28,6 +28,40 @@ body {
   color: var(--ink);
 }
 
+/* Keep form controls usable with touch and avoid iOS input zoom. */
+input, select, textarea { max-width: 100%; }
+button, a, input, select, textarea { touch-action: manipulation; }
+:focus-visible { outline: 2px solid var(--herbal-dark); outline-offset: 3px; }
+.admin-layout button { min-height: 44px; }
+#mobile-navigation > a, #mobile-navigation > button { min-height: 44px; width: 100%; }
+
+@media (max-width: 639px) {
+  input:not([type="checkbox"]):not([type="radio"]), select, textarea { font-size: 16px; }
+  .admin-table, .admin-table tbody { display: block; width: 100%; }
+  .admin-table thead { display: none; }
+  .admin-table tr { display: block; padding: 12px; }
+  .admin-table td {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    max-width: none;
+    padding: 8px 4px;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+  .admin-table td[data-label]::before {
+    content: attr(data-label);
+    flex: 0 0 100%;
+    font-size: 12px;
+    color: #78716c;
+  }
+  .admin-table td img { flex-shrink: 0; }
+  .admin-table td > div { min-width: 0; }
+  .admin-table td[colspan] { justify-content: center; }
+}
+
 /* Keyframes for pulsing glow */
 @keyframes pulse-glow {
   0%, 100% {

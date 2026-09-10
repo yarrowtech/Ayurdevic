@@ -6,6 +6,8 @@ import connectDB from "./configs/db.js";
 import userRouter from "./routes/user.Route.js";
 import adminRouter from "./routes/admin.Route.js";
 import Product from "./model/Product.js";
+import Category from "./model/Category.js";
+import { uploadDirectory } from "./configs/imageUpload.js";
 
 const app = express();
 const port = process.env.PORT || 5000;
@@ -27,9 +29,17 @@ app.get("/", (req, res) => {
 
 app.use("/api/user", userRouter);
 app.use("/api/admin", adminRouter);
+app.use("/uploads", express.static(uploadDirectory, {
+  dotfiles: "deny",
+  setHeaders: res => res.setHeader("X-Content-Type-Options", "nosniff"),
+}));
 app.get("/api/products", async (req, res) => {
   try { res.json({ success: true, products: await Product.find().sort({ createdAt: -1 }) }); }
   catch { res.status(500).json({ success: false, message: "Unable to load products" }); }
+});
+app.get("/api/categories", async (req, res) => {
+  try { res.json({ success: true, categories: await Category.find({ visible: true }).sort({ createdAt: -1 }) }); }
+  catch { res.status(500).json({ success: false, message: "Unable to load categories." }); }
 });
 
 app.listen(port, () => {

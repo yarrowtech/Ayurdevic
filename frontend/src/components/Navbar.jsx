@@ -1,5 +1,5 @@
-import React, { useEffect, useLayoutEffect, useRef, useState } from 'react'
-import { NavLink, useLocation } from 'react-router-dom'
+import React, { useEffect, useState } from 'react'
+import { NavLink } from 'react-router-dom'
 import { assets } from '../assets/assets';
 import { useAppContext } from '../context/AppContext';
 
@@ -11,7 +11,7 @@ const Navbar = () => {
     if (searchQuery.length > 0) {
       navigate("/products");
     }
-  }, [searchQuery]);
+  }, [searchQuery, navigate]);
 
   // Helper: link classes + active dot
   const linkClass = (isActive) =>
@@ -27,7 +27,7 @@ const Navbar = () => {
       className="
         sticky top-0 z-50
         flex items-center justify-between
-        px-6 md:px-16 lg:px-24 xl:px-32 py-4
+        px-4 sm:px-6 lg:px-10 xl:px-16 py-3 gap-4
         bg-[var(--paper)]/80 backdrop-blur
         border-b border-[var(--clay)]/70
         shadow-sm
@@ -46,7 +46,7 @@ const Navbar = () => {
       </NavLink>
 
       {/* Desktop Menu */}
-      <div className="hidden sm:flex items-center gap-6 lg:gap-8">
+      <div className="hidden xl:flex items-center gap-5">
         <NavLink to="/">
           {({ isActive }) => (
             <span className={linkClass(isActive)}>
@@ -86,7 +86,7 @@ const Navbar = () => {
           "
         >
           <input
-            onChange={(e)=> setSearchQuery(e.target.value)}
+            value={searchQuery ?? ""} aria-label="Search products" onChange={(e)=> setSearchQuery(e.target.value)}
             className="
               py-0.5 w-full bg-transparent outline-none
               placeholder-[var(--ink)]/50 text-[var(--ink)]
@@ -126,17 +126,17 @@ const Navbar = () => {
           </button>
         ) : (
           <div className='relative group'>
-            <img src={assets.profile_icon} className='w-10 cursor-pointer' alt="profile" />
+            <button type="button" aria-label="Account menu" className="p-1"><img src={assets.profile_icon} className="w-10" alt="" /></button>
             <ul
               className="
-                hidden group-hover:block absolute top-10 right-0
+                hidden group-hover:block group-focus-within:block absolute top-10 right-0
                 bg-white/90 backdrop-blur
                 shadow-lg border border-[var(--clay)]/70
                 py-2.5 w-30 rounded-md text-sm z-40
               "
             >
               <li
-                onClick={() => navigate('my-orders')}
+                onClick={() => navigate('/my-orders')}
                 className='p-1.5 pl-3 hover:bg-[var(--herbal)]/10 cursor-pointer text-[var(--ink)]'
               >
                 My Orders
@@ -153,7 +153,7 @@ const Navbar = () => {
       </div>
 
       {/* Mobile: cart + menu */}
-      <div className='flex items-center gap-6 sm:hidden'>
+      <div className='flex items-center gap-5 xl:hidden'>
         <div onClick={() => navigate('/cart')} className="relative cursor-pointer">
           <img src={assets.nav_cart_icon} alt="cart" className='w-6 opacity-80 hover:opacity-100 transition' />
           <button
@@ -168,9 +168,9 @@ const Navbar = () => {
 
         <button
           onClick={() => (open ? setOpen(false) : setOpen(true))}
-          aria-label="Menu"
+          aria-label="Menu" aria-expanded={open} aria-controls="mobile-navigation"
           className="
-            sm:hidden p-2 rounded-md
+            xl:hidden p-3 rounded-md
             hover:bg-white/70 active:scale-95 transition
             border border-[var(--clay)]/60
           "
@@ -182,14 +182,19 @@ const Navbar = () => {
       {/* Mobile Menu */}
       {open && (
         <div
+          id="mobile-navigation"
           className={`
             ${open ? 'flex' : 'hidden'}
-            absolute top-[60px] left-0 w-full
+            absolute top-full left-0 w-full max-h-[calc(100dvh-70px)] overflow-y-auto
             bg-[var(--paper)]/95 backdrop-blur
             shadow-md border-t border-[var(--clay)]/70
-            py-4 flex-col items-start gap-2 px-5 text-sm md:hidden
+            py-4 flex-col items-start gap-2 px-5 text-base xl:hidden
           `}
         >
+          <label className="w-full">
+            <span className="sr-only">Search products</span>
+            <input type="search" value={searchQuery ?? ""} onChange={e => setSearchQuery(e.target.value)} placeholder="Search products" className="mb-2 min-h-11 w-full rounded-lg border border-[var(--clay)] bg-white px-3" />
+          </label>
           <NavLink to="/" onClick={() => setOpen(false)}>
             {({ isActive }) => (
               <span className={`${linkClass(isActive)} block w-full py-2`}>
@@ -209,7 +214,7 @@ const Navbar = () => {
           </NavLink>
 
           {user && (
-            <NavLink to="/contact" onClick={() => setOpen(false)}>
+            <NavLink to="/my-orders" onClick={() => setOpen(false)}>
               {({ isActive }) => (
                 <span className={`${linkClass(isActive)} block w-full py-2`}>
                   My Orders

@@ -1,9 +1,9 @@
 import React from 'react';
-import { categories } from '../assets/assets';
 import { useAppContext } from "../context/AppContext";
 
 const Categories = () => {
-  const { navigate } = useAppContext();
+  const { navigate, categories } = useAppContext();
+  if (!categories.length) return null;
 
   return (
     <section className="mt-16">
@@ -30,14 +30,14 @@ const Categories = () => {
               flex flex-col items-center justify-center gap-3
             "
             onClick={() => {
-              navigate(`/products/${category.path.toLowerCase()}`);
+              navigate(`/products/${encodeURIComponent(category.key)}`);
               scrollTo(0, 0);
             }}
           >
             {/* Image */}
-            <img
+            {category.image ? <img
               src={category.image}
-              alt={category.text}
+              alt={category.name}
               className="
                 h-16 w-16 md:h-20 md:w-20 object-contain
                 transition-transform duration-200
@@ -45,7 +45,7 @@ const Categories = () => {
                 drop-shadow-sm
               "
               draggable={false}
-            />
+            /> : <span className="flex h-16 w-16 items-center justify-center rounded-full bg-green-50 text-3xl text-green-800 md:h-20 md:w-20">{category.name[0]}</span>}
 
             {/* Label */}
             <p
@@ -56,10 +56,11 @@ const Categories = () => {
                 group-hover:text-[var(--herbal-dark)]
                 transition-colors
               "
-              title={category.text}
+              title={category.name}
             >
-              {category.text}
+              {category.name}
             </p>
+            {category.offer && <p className="w-full break-words rounded-full bg-green-100 px-3 py-1 text-center text-xs text-green-800">{category.offer}</p>}
 
             {/* Herbal accent glow */}
             <div className="pointer-events-none absolute rounded-2xl inset-0 opacity-0 group-hover:opacity-100 transition-opacity">
