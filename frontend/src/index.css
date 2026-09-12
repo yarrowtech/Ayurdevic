@@ -28,6 +28,41 @@ body {
   color: var(--ink);
 }
 
+.promotion-track {
+  position: relative;
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 88%;
+  gap: 16px;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;
+  padding-block: 2px;
+}
+.promotion-track::-webkit-scrollbar { display: none; }
+.promotion-card {
+  display: grid;
+  min-width: 0;
+  min-height: 300px;
+  padding: 20px;
+  gap: 12px;
+  border-radius: 18px;
+  scroll-snap-align: start;
+  overflow: hidden;
+}
+.promotion-card-with-image { grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr); }
+.promotion-card-product { border: 1px solid var(--clay); box-shadow: 0 1px 3px rgba(47, 47, 47, 0.08); }
+@media (min-width: 640px) {
+  .promotion-track { grid-auto-columns: calc((100% - 16px) / 2); }
+}
+@media (min-width: 1024px) {
+  .promotion-track { grid-auto-columns: calc((100% - 32px) / 3); }
+}
+@media (min-width: 1536px) {
+  .promotion-track { grid-auto-columns: calc((100% - 48px) / 4); }
+}
+
 /* Keep form controls usable with touch and avoid iOS input zoom. */
 input, select, textarea { max-width: 100%; }
 button, a, input, select, textarea { touch-action: manipulation; }
@@ -75,4 +110,15 @@ button, a, input, select, textarea { touch-action: manipulation; }
 .animate-pulse-glow {
   animation: pulse-glow 4s ease-in-out infinite;
   border-radius: 50%; /* ensures smooth glow around ellipse */
+}
+
+@keyframes banner-fade {
+  from { opacity: 0.35; }
+  to { opacity: 1; }
+}
+
+.banner-slide { animation: banner-fade 0.4s ease; }
+
+@media (prefers-reduced-motion: reduce) {
+  .banner-slide { animation: none; }
 }

@@ -10,6 +10,16 @@ export const loginUser = async ({ email, password }) => {
   return data;
 };
 
+export const getGoogleConfig = async () => {
+  const { data } = await api.get("/api/user/google/config");
+  return data;
+};
+
+export const googleSignIn = async (credential) => {
+  const { data } = await api.post("/api/user/google", { credential });
+  return data;
+};
+
 export const logoutUser = async () => {
   const { data } = await api.get("/api/user/logout");
   return data;

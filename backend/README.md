@@ -16,6 +16,23 @@ and creates an administrator. Rerunning it leaves an existing administrator
 unchanged; it will not promote an existing customer or reset their password.
 Public registration always creates a regular user.
 
+Customers can open Login in the storefront and choose Create account. Registration
+requires a name, email, password of at least 8 characters (up to 72 UTF-8 bytes),
+and matching password confirmation in the form. Emails are normalized and matched
+case-insensitively. Registration signs the customer in immediately; the HTTP-only
+session cookie restores their session on refresh. The account menu provides sign-out.
+
+The Login dialog also offers Continue with Google. Set `GOOGLE_CLIENT_ID` in the
+backend `.env` to a Google OAuth 2.0 Web client ID whose authorized JavaScript
+origin is the frontend origin, and set `FRONTEND_URL` to that same origin (no
+trailing slash) so the sign-in POST passes the Origin check. The frontend needs
+no key; it reads the client ID from `/api/user/google/config` at runtime and
+hides the Google button when it is unset. Google sign-in creates a regular user
+on first use and links to an existing password account only when Google is
+authoritative for that verified email (a `@gmail.com` or Workspace address) and
+the account is not an admin; otherwise the customer keeps using their original
+sign-in method.
+
 Start the frontend and visit `http://localhost:5173/admin`. Sign in with the seeded
 credentials. The panel shows account/product counts, the latest 100 accounts,
 and product creation, editing, availability and deletion. Admin API routes verify
@@ -29,6 +46,12 @@ eight images total per product). Uploaded files are stored in `backend/uploads`
 and served at `/uploads`. Keep that directory on persistent storage and include
 it in backups when deploying. Prices use the storefront currency.
 Orders and payments are not part of this panel yet.
+
+In Products, enable **Show in homepage banner** and save to promote a product
+in the top homepage slider. Selected, in-stock products replace the default
+promotional slides, using their first image, name, first description point,
+and price. Unchecking the option removes that product from the slider; if none
+qualify, the default promotional slides return.
 
 The Categories sidebar manages category names, images, promotional offer text,
 and storefront visibility. Categories are stored in MongoDB and replace the

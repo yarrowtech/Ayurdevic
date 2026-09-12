@@ -29,6 +29,7 @@
 // src/App.jsx
 import React from 'react'
 import Navbar from './components/Navbar'
+import CategoryStrip from './components/CategoryStrip'
 import { Route, Routes, useLocation } from 'react-router-dom'
 import Home from './pages/Home'
 import { Toaster } from "react-hot-toast";
@@ -50,7 +51,12 @@ const App = () => {
  
   return (
     <div className="font-body bg-paper text-ink min-h-screen flex flex-col">
-      {!isSellerPath && !isAdminPath && <Navbar />}
+      {!isSellerPath && !isAdminPath && (
+        <header className="sticky top-0 z-50">
+          <Navbar />
+          <CategoryStrip />
+        </header>
+      )}
       {showUserLogin ? <Login /> : null}
       <Toaster position="bottom-center" containerStyle={{ bottom: "max(16px, env(safe-area-inset-bottom))" }} />
       

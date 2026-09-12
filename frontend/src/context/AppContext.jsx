@@ -118,6 +118,14 @@ export const AppContextProvider = ({ children }) => {
         refreshCategories();
     }, [refreshProducts, refreshCategories]);
 
+    useEffect(() => {
+        const refreshVisibleCatalog = () => {
+            if (document.visibilityState === 'visible') refreshProducts();
+        };
+        document.addEventListener('visibilitychange', refreshVisibleCatalog);
+        return () => document.removeEventListener('visibilitychange', refreshVisibleCatalog);
+    }, [refreshProducts]);
+
     const value = { navigate, user, setUser, logout, isSeller, setIsSeller, showUserLogin, setShowUserLogin, products, currency, addToCart, updateCartItem, removeFromCart, cartItems, searchQuery, setSearchQuery, getCartAmount, getCartCount, refreshProducts };
     return <AppContext.Provider value={{ ...value, categories, refreshCategories }}>
         {children}

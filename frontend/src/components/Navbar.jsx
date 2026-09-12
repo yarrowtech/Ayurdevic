@@ -5,6 +5,7 @@ import { useAppContext } from '../context/AppContext';
 
 const Navbar = () => {
   const [open, setOpen] = useState(false);
+  const [accountOpen, setAccountOpen] = useState(false);
   const { user, setShowUserLogin, navigate, setSearchQuery, searchQuery, getCartCount, logout } = useAppContext();
 
   useEffect(()=> {
@@ -25,7 +26,7 @@ const Navbar = () => {
   return (
     <nav
       className="
-        sticky top-0 z-50
+        relative z-50
         flex items-center justify-between
         px-4 sm:px-6 lg:px-10 xl:px-16 py-3 gap-4
         bg-[var(--paper)]/80 backdrop-blur
@@ -126,27 +127,17 @@ const Navbar = () => {
           </button>
         ) : (
           <div className='relative group'>
-            <button type="button" aria-label="Account menu" className="p-1"><img src={assets.profile_icon} className="w-10" alt="" /></button>
+            <button type="button" aria-label="Account menu" aria-expanded={accountOpen} onClick={() => setAccountOpen(current => !current)} className="p-1"><img src={assets.profile_icon} className="w-10" alt="" /></button>
             <ul
-              className="
-                hidden group-hover:block group-focus-within:block absolute top-10 right-0
+              className={`${accountOpen ? 'block' : 'hidden'}
+                absolute top-12 right-0
                 bg-white/90 backdrop-blur
                 shadow-lg border border-[var(--clay)]/70
-                py-2.5 w-30 rounded-md text-sm z-40
-              "
+                py-2.5 w-60 rounded-md text-sm z-40
+              `}
             >
-              <li
-                onClick={() => navigate('/my-orders')}
-                className='p-1.5 pl-3 hover:bg-[var(--herbal)]/10 cursor-pointer text-[var(--ink)]'
-              >
-                My Orders
-              </li>
-              <li
-                onClick={logout}
-                className='p-1.5 pl-3 hover:bg-[var(--herbal)]/10 cursor-pointer text-[var(--ink)]'
-              >
-                Logout
-              </li>
+              <li className="px-4 py-2"><p className="break-words font-medium">{user.name}</p><p className="break-all text-xs text-stone-500">{user.email}</p></li>
+              <li><button type="button" onClick={async () => { await logout(); setAccountOpen(false); }} className="min-h-11 w-full px-4 text-left text-green-800 hover:bg-green-50">Sign out</button></li>
             </ul>
           </div>
         )}
@@ -213,16 +204,7 @@ const Navbar = () => {
             )}
           </NavLink>
 
-          {user && (
-            <NavLink to="/my-orders" onClick={() => setOpen(false)}>
-              {({ isActive }) => (
-                <span className={`${linkClass(isActive)} block w-full py-2`}>
-                  My Orders
-                  {isActive && <Dot />}
-                </span>
-              )}
-            </NavLink>
-          )}
+          {user && <div className="max-w-full py-2"><p className="break-words font-medium">{user.name}</p><p className="break-all text-sm text-stone-500">{user.email}</p></div>}
 
           {user?.role === 'admin' && <NavLink to="/admin" onClick={() => setOpen(false)}>Admin panel</NavLink>}
 
@@ -249,14 +231,14 @@ const Navbar = () => {
             </button>
           ) : (
             <button
-              onClick={logout}
+              onClick={async () => { await logout(); setOpen(false); }}
               className="
                 cursor-pointer px-6 py-2 mt-2 rounded-full text-sm
-                bg-primary text-white hover:bg-[var(--herbal-dark)] transition
+                bg-green-800 text-white hover:bg-[var(--herbal-dark)] transition
                 shadow-sm
               "
             >
-              Logout
+              Sign out
             </button>
           )}
         </div>

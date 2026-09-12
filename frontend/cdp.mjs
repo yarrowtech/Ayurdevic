@@ -1,0 +1,16 @@
+import http from 'http';
+const j = await new Promise((res,rej)=>http.get('http://localhost:9222/json/new?http://localhost:5173',r=>{let d='';r.on('data',c=>d+=c);r.on('end',()=>res(JSON.parse(d)))}).on('error',rej));
+const ws = j.webSocketDebuggerUrl;
+const WebSocket = (await import('ws')).default;
+const sock = new WebSocket(ws);
+let id=0; const send=(m,p={})=>new Promise(r=>{const i=++id;const h=d=>{const o=JSON.parse(d);if(o.id===i){sock.off('message',h);r(o.result)}};sock.on('message',h);sock.send(JSON.stringify({id:i,method:m,params:p}))});
+await new Promise(r=>sock.on('open',r));
+await send('Page.enable'); await send('Runtime.enable');
+await send('Emulation.setDeviceMetricsOverride',{width:390,height:780,deviceScaleFactor:1,mobile:true});
+await send('Page.navigate',{url:'http://localhost:5173'});
+await new Promise(r=>setTimeout(r,6000));
+const ev=async expr=>(await send('Runtime.evaluate',{expression:expr,returnByValue:true})).result.value;
+console.log('docScrollWidth', await ev('document.documentElement.scrollWidth'));
+console.log('offenders', await ev(`JSON.stringify([...document.querySelectorAll('body *')].filter(e=>e.getBoundingClientRect().right>391).slice(0,8).map(e=>e.tagName+'.'+(e.className&&e.className.baseVal!==undefined?e.className.baseVal:(''+e.className)).slice(0,60)+' w='+Math.round(e.getBoundingClientRect().width)))`));
+console.log('h2', await ev(`(()=>{const h=document.querySelector('.banner-slide h2');const r=h.getBoundingClientRect();const cs=getComputedStyle(h);return JSON.stringify({w:Math.round(r.width),right:Math.round(r.right),fs:cs.fontSize,ws:cs.whiteSpace,parentW:Math.round(h.parentElement.getBoundingClientRect().width)})})()`));
+sock.close();

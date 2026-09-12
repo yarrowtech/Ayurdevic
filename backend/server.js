@@ -34,6 +34,7 @@ app.use("/uploads", express.static(uploadDirectory, {
   setHeaders: res => res.setHeader("X-Content-Type-Options", "nosniff"),
 }));
 app.get("/api/products", async (req, res) => {
+  res.set("Cache-Control", "no-store");
   try { res.json({ success: true, products: await Product.find().sort({ createdAt: -1 }) }); }
   catch { res.status(500).json({ success: false, message: "Unable to load products" }); }
 });

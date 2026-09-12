@@ -2,11 +2,11 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import User from "../model/User.modal.js";
 
-const createToken = (userId) => {
+export const createToken = (userId) => {
   return jwt.sign({ id: userId }, process.env.JWT_SECRET, { expiresIn: "7d" });
 };
 
-const setTokenCookie = (res, token) => {
+export const setTokenCookie = (res, token) => {
   res.cookie("token", token, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
@@ -18,31 +18,30 @@ const setTokenCookie = (res, token) => {
 // POST /api/user/register
 export const register = async (req, res) => {
   try {
-    const { name, email, password } = req.body;
+    const { name: rawName, email: rawEmail, password } = req.body ?? {};
+    if (typeof rawName !== "string" || rawName.trim().length < 2 || rawName.trim().length > 100) return res.status(400).json({ success: false, message: "Enter a name between 2 and 100 characters." });
+    if (typeof rawEmail !== "string" || rawEmail.trim().length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(rawEmail.trim())) return res.status(400).json({ success: false, message: "Enter a valid email address." });
+    if (typeof password !== "string" || password.length < 8 || Buffer.byteLength(password, "utf8") > 72) return res.status(400).json({ success: false, message: "Use at least 8 characters and no more than 72 bytes for your password." });
+    const name = rawName.trim();
+    const email = rawEmail.trim().toLowerCase();
 
-    if (!name || !email || !password) {
-      return res.status(400).json({ success: false, message: "Missing details" });
-    }
-    if (password.length < 6) {
-      return res.status(400).json({ success: false, message: "Password should be at least 6 characters" });
-    }
-
-    const existingUser = await User.findOne({ email });
+    const existingUser = await User.findOne({ email }).collation({ locale: "en", strength: 2 });
     if (existingUser) {
-      return res.status(409).json({ success: false, message: "User already exists" });
+      return res.status(409).json({ success: false, message: "An account with this email already exists. Please sign in." });
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
-    const user = await User.create({ name, email, password: hashedPassword });
+    const user = await User.create({ name, email, password: hashedPassword, role: "user" });
 
     const token = createToken(user._id);
     setTokenCookie(res, token);
 
     return res.status(201).json({
       success: true,
-      user: { email: user.email, name: user.name, role: user.role },
+      user: { _id: user._id, email: user.email, name: user.name, role: user.role },
     });
   } catch (error) {
+    if (error.code === 11000) return res.status(409).json({ success: false, message: "An account with this email already exists. Please sign in." });
     console.error(error);
     return res.status(500).json({ success: false, message: "Server error" });
   }
@@ -51,16 +50,19 @@ export const register = async (req, res) => {
 // POST /api/user/login
 export const login = async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const { email: rawEmail, password } = req.body ?? {};
+    if (typeof rawEmail !== "string" || rawEmail.length > 254 || typeof password !== "string" || password.length > 1024) return res.status(400).json({ success: false, message: "Enter your email and password." });
+    const email = rawEmail.trim().toLowerCase();
 
     if (!email || !password) {
       return res.status(400).json({ success: false, message: "Email and password are required" });
     }
 
-    const user = await User.findOne({ email });
+    const user = await User.findOne({ email }).collation({ locale: "en", strength: 2 });
     if (!user) {
       return res.status(401).json({ success: false, message: "Invalid email or password" });
     }
+    if (!user.password) return res.status(401).json({ success: false, message: "Use Continue with Google to sign in to this account." });
 
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
@@ -72,7 +74,7 @@ export const login = async (req, res) => {
 
     return res.json({
       success: true,
-      user: { email: user.email, name: user.name, role: user.role },
+      user: { _id: user._id, email: user.email, name: user.name, role: user.role },
     });
   } catch (error) {
     console.error(error);

@@ -6,7 +6,7 @@ import { checkAuth, loginUser, logoutUser } from "../services/userService";
 import { useAppContext } from "../context/AppContext";
 import AdminCategories from "../components/AdminCategories";
 
-const emptyProduct = { name: "", category: "", price: "", offerPrice: "", images: "", description: "", inStock: true };
+const emptyProduct = { name: "", category: "", price: "", offerPrice: "", images: "", description: "", inStock: true, showInBanner: false, isBestSeller: false };
 const inputStyle = "min-w-0 w-full rounded-lg border border-stone-300 bg-white px-3 py-2.5 outline-none focus:ring-2 focus:ring-green-700";
 const buttonStyle = "rounded-lg bg-green-800 px-5 py-2.5 text-white disabled:opacity-50 hover:bg-green-900";
 const errorMessage = error => error?.response?.data?.message || "Unable to connect. Check that the backend is running.";
@@ -117,6 +117,8 @@ export default function Admin() {
       price: product.price ?? "", offerPrice: product.offerPrice ?? "",
       images: (product.image ?? []).join("\n"), description: (product.description ?? []).join("\n"),
       inStock: product.inStock ?? true,
+      showInBanner: product.showInBanner ?? false,
+      isBestSeller: product.isBestSeller ?? false,
     });
     setShowForm(true);
   };
@@ -129,10 +131,19 @@ export default function Admin() {
       name: form.name, category: form.category, price: Number(form.price), offerPrice: Number(form.offerPrice),
       image: form.images.split("\n").map(s => s.trim()).filter(Boolean),
       description: form.description.split("\n").map(s => s.trim()).filter(Boolean), inStock: form.inStock,
+      showInBanner: form.showInBanner,
+      isBestSeller: form.isBestSeller,
     };
     try {
-      if (editing) await api.put(`/api/admin/products/${editing}`, data);
-      else await api.post("/api/admin/products", data);
+      const response = editing
+        ? await api.put(`/api/admin/products/${editing}`, data)
+        : await api.post("/api/admin/products", data);
+      if (response.data.product?.showInBanner !== data.showInBanner) {
+        throw { response: { data: { message: "The server did not save the banner setting. Restart the backend and save this product again." } } };
+      }
+      if (response.data.product?.isBestSeller !== data.isBestSeller) {
+        throw { response: { data: { message: "The server did not save the Best seller setting. Restart the backend and save this product again." } } };
+      }
       setShowForm(false);
       setEditing(null);
       setForm(emptyProduct);
@@ -232,6 +243,14 @@ export default function Admin() {
               </div>
               <label className="block text-sm">Description (one point per line)<textarea rows={3} value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} className={inputStyle} /></label>
               <label className="flex gap-2 items-center"><input type="checkbox" checked={form.inStock} onChange={e => setForm({ ...form, inStock: e.target.checked })} />In stock</label>
+              <div className="rounded-lg border border-green-200 bg-green-50 p-4">
+                <label className="flex gap-2 items-center font-medium text-green-900"><input type="checkbox" checked={form.isBestSeller} onChange={e => setForm({ ...form, isBestSeller: e.target.checked })} />Best seller</label>
+                <p className="mt-1 text-sm text-stone-600">Show this product in the homepage Best Sellers section while it is in stock. Only selected products appear there.</p>
+              </div>
+              <div className="rounded-lg border border-green-200 bg-green-50 p-4">
+                <label className="flex gap-2 items-center font-medium text-green-900"><input type="checkbox" checked={form.showInBanner} onChange={e => setForm({ ...form, showInBanner: e.target.checked })} />Show in homepage banner</label>
+                <p className="mt-1 text-sm text-stone-600">Display this product's image, name and price in the top homepage slider while it is in stock. Uncheck to remove it from the banner.</p>
+              </div>
               <div className="flex flex-wrap gap-3"><button disabled={busy || uploading} className={buttonStyle}>{busy ? "Saving…" : "Save product"}</button><button type="button" disabled={busy || uploading} onClick={() => setShowForm(false)} className="px-4 py-2">Cancel</button></div>
             </form>}
             <div className="overflow-x-auto bg-white rounded-xl border border-stone-200"><table className="admin-table w-full text-left text-sm"><thead className="bg-stone-100"><tr>{["Product", "Category", "Price", "Availability", "Actions"].map(label => <th key={label} className="p-4">{label}</th>)}</tr></thead><tbody>
