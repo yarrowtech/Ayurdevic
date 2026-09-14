@@ -9,7 +9,7 @@ const tones = {
 
 // Shared "Trending Deals"-style rail: a tinted panel with a heading, a
 // link to the full catalog, and a horizontally scrolling row of products.
-export default function ProductRail({ title, products, viewAllTo = '/products', tone = 'herbal' }) {
+export default function ProductRail({ title, products, viewAllTo = '/products', tone = 'herbal', id }) {
   const track = useRef(null);
   const [overflowing, setOverflowing] = useState(false);
 
@@ -28,7 +28,7 @@ export default function ProductRail({ title, products, viewAllTo = '/products', 
   const headingId = `${title.replace(/\s+/g, '-').toLowerCase()}-rail-title`;
 
   return (
-    <section aria-labelledby={headingId} className="mt-16">
+    <section id={id} aria-labelledby={headingId} className="mt-16 scroll-mt-24">
       <div className={`rounded-2xl border border-[var(--clay)]/70 bg-gradient-to-br ${tones[tone] || tones.herbal} p-4 shadow-sm sm:p-6`}>
         <div className="flex items-center justify-between gap-4">
           <h2 id={headingId} className="font-heading text-xl text-[var(--ink)] sm:text-2xl">{title}</h2>

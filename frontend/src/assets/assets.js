@@ -149,9 +149,9 @@ export const footerLinks = [
   {
     title: "Quick Links",
     links: [
-      { text: "Home", url: "#" },
-      { text: "Best Sellers", url: "#" },
-      { text: "Offers & Deals", url: "#" },
+      { text: "Home", url: "/" },
+      { text: "Best Sellers", url: "/#best-selling" },
+      { text: "Offers & Deals", url: "/#trending-deals" },
       { text: "Contact Us", url: "/contact" },
       { text: "FAQs", url: "#" },
     ],
@@ -159,10 +159,10 @@ export const footerLinks = [
   {
     title: "Need help?",
     links: [
-      { text: "Delivery Information", url: "#" },
-      { text: "Return & Refund Policy", url: "#" },
-      { text: "Payment Methods", url: "#" },
-      { text: "Track your Order", url: "#" },
+      { text: "Delivery Information", url: "/delivery-information" },
+      { text: "Return & Refund Policy", url: "/returns" },
+      { text: "Payment Methods", url: "/payment-methods" },
+      { text: "Track your Order", url: "/account?tab=orders" },
       { text: "Contact Us", url: "/contact" },
     ],
   },

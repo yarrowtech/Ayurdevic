@@ -147,6 +147,7 @@ function AddressesTab() {
 
 function ProfileTab({ user, logout }) {
   const [busy, setBusy] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
   return (
     <div className="max-w-md space-y-6 rounded-xl border border-stone-200 bg-white p-5 sm:p-6">
       <div>
@@ -157,7 +158,19 @@ function ProfileTab({ user, logout }) {
         <p className="text-sm text-stone-500">Email</p>
         <p className="break-all text-lg font-medium">{user.email}</p>
       </div>
-      <button disabled={busy} onClick={async () => { setBusy(true); await logout(); }} className="min-h-11 rounded-lg border border-stone-300 px-5 text-stone-700 hover:bg-stone-50 disabled:opacity-50">{busy ? "Signing out…" : "Sign out"}</button>
+      <button disabled={busy} onClick={() => setConfirmOpen(true)} className="min-h-11 rounded-lg border border-stone-300 px-5 text-stone-700 hover:bg-stone-50 disabled:opacity-50">{busy ? "Signing out…" : "Sign out"}</button>
+      {confirmOpen && (
+        <div role="presentation" className="fixed inset-0 z-[80] flex items-center justify-center bg-black/40 p-4" onClick={() => !busy && setConfirmOpen(false)}>
+          <div role="alertdialog" aria-modal="true" aria-labelledby="confirm-signout-title" onClick={event => event.stopPropagation()} className="w-full max-w-sm rounded-xl bg-[var(--paper)] p-6 shadow-xl">
+            <h2 id="confirm-signout-title" className="text-lg font-semibold">Sign out?</h2>
+            <p className="mt-2 text-stone-600">You'll need to sign in again to view your account.</p>
+            <div className="mt-6 flex justify-end gap-3">
+              <button type="button" disabled={busy} onClick={() => setConfirmOpen(false)} className="min-h-11 px-4 text-stone-600 disabled:opacity-50">Cancel</button>
+              <button type="button" disabled={busy} onClick={async () => { setBusy(true); await logout(); setConfirmOpen(false); }} className="min-h-11 rounded-lg bg-red-700 px-5 text-white hover:bg-red-800 disabled:opacity-50">{busy ? "Signing out…" : "Sign out"}</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

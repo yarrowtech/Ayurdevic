@@ -5,7 +5,7 @@ import { useAppContext } from '../context/AppContext';
 const BestSeller = () => {
   const { products } = useAppContext();
   const bestSellers = products.filter(product => product.isBestSeller === true && product.inStock);
-  return <ProductRail title="Best Selling" products={bestSellers} tone="herbal" />;
+  return <ProductRail id="best-selling" title="Best Selling" products={bestSellers} tone="herbal" />;
 };
 
 export default BestSeller;

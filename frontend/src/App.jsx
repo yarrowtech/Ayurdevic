@@ -43,6 +43,9 @@ import Cart from './pages/Cart';
 import Admin from './pages/Admin';
 import Account from './pages/Account';
 import Contact from './pages/Contact';
+import DeliveryInformation from './pages/DeliveryInformation';
+import Returns from './pages/Returns';
+import PaymentMethods from './pages/PaymentMethods';
 import NotFound from './pages/NotFound';
 
 const App = () => {
@@ -74,6 +77,9 @@ const App = () => {
           <Route path='/account' element={<Account />} />
           <Route path='/admin/*' element={<Admin />} />
           <Route path='/contact' element={<Contact />} />
+          <Route path='/delivery-information' element={<DeliveryInformation />} />
+          <Route path='/returns' element={<Returns />} />
+          <Route path='/payment-methods' element={<PaymentMethods />} />
           <Route path='*' element={<NotFound />} />
         </Routes>
       </main>
