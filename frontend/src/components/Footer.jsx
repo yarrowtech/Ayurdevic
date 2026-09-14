@@ -12,7 +12,6 @@ const Footer = () => {
                     <Link to="/">
                         <h1 className="text-3xl sm:text-4xl font-extrabold text-white">Ayurvedic</h1>
                     </Link>
-                    <p className="max-w-[410px] mt-6">Lorem ipsum dolor sit amet consectetur, adipisicing elit. Rerum unde quaerat eveniet cumque accusamus atque qui error quo enim fugiat?</p>
                 </div>
                 <div className="flex flex-wrap justify-between w-full lg:w-1/2 gap-5">
                     {footerLinks.map((section, index) => (

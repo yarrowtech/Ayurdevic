@@ -10,6 +10,7 @@ import { validateProduct } from "../configs/validateProduct.js";
 import { validateStaffAccount, validateStaffPassword } from "../configs/validateStaff.js";
 import { imageUpload } from "../configs/imageUpload.js";
 import categoryRouter from "./category.Route.js";
+import promoRouter from "./promo.Route.js";
 
 const router = express.Router();
 // Any signed-in admin or product admin may reach this router; individual
@@ -25,6 +26,7 @@ router.use((req, res, next) => {
 });
 router.post("/images", ...imageUpload);
 router.use("/categories", categoryRouter);
+router.use("/promos", promoRouter);
 router.get("/overview", async (req, res) => {
   try {
     const [users, products, inStock] = await Promise.all([

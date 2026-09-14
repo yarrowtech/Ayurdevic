@@ -36,6 +36,7 @@ import { Toaster } from "react-hot-toast";
 import Footer from './components/Footer';
 import { useAppContext } from './context/AppContext';
 import Login from './components/Login';
+import PromoPopup from './components/PromoPopup';
 import AllProducts from './pages/AllProducts';
 import ProductCategory from './pages/ProductCategory';
 import ProductDetails from './pages/ProductDetails';
@@ -46,6 +47,7 @@ import Contact from './pages/Contact';
 import DeliveryInformation from './pages/DeliveryInformation';
 import Returns from './pages/Returns';
 import PaymentMethods from './pages/PaymentMethods';
+import Faq from './pages/Faq';
 import NotFound from './pages/NotFound';
 
 const App = () => {
@@ -65,6 +67,7 @@ const App = () => {
         </header>
       )}
       {showUserLogin ? <Login /> : null}
+      {!isSellerPath && !isAdminPath && <PromoPopup />}
       <Toaster position="bottom-center" containerStyle={{ bottom: "max(16px, env(safe-area-inset-bottom))" }} />
       
       <main className={`${isSellerPath || isAdminPath ? "" : "px-4 sm:px-6 lg:px-10 xl:px-16"} min-w-0 flex-grow`}>
@@ -80,6 +83,7 @@ const App = () => {
           <Route path='/delivery-information' element={<DeliveryInformation />} />
           <Route path='/returns' element={<Returns />} />
           <Route path='/payment-methods' element={<PaymentMethods />} />
+          <Route path='/faq' element={<Faq />} />
           <Route path='*' element={<NotFound />} />
         </Routes>
       </main>

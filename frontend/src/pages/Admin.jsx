@@ -6,10 +6,12 @@ import api from "../services/api";
 import { checkAuth, loginUser, logoutUser } from "../services/userService";
 import { useAppContext } from "../context/AppContext";
 import AdminCategories from "../components/AdminCategories";
+import DeletePromoModal from "../components/DeletePromoModal";
 import { assets } from "../assets/assets";
 
 const emptyProduct = { name: "", category: "", price: "", offerPrice: "", extraDiscountPercent: 0, images: "", description: "", inStock: true, showInBanner: false, isBestSeller: false };
 const emptyStaff = { name: "", email: "", password: "" };
+const emptyPromo = { title: "", subtitle: "", image: "", ctaText: "Shop now", ctaLink: "/products", buttonColor: "#1c1917", buttonTextColor: "#ffffff", active: true };
 const staffRoles = ["admin", "product_admin"];
 const inputStyle = "min-w-0 w-full rounded-lg border border-stone-300 bg-white px-3 py-2.5 outline-none focus:ring-2 focus:ring-green-700";
 const buttonStyle = "rounded-lg bg-green-800 px-5 py-2.5 text-white disabled:opacity-50 hover:bg-green-900";
@@ -43,12 +45,23 @@ export default function Admin() {
   const [viewingStaff, setViewingStaff] = useState(null);
   const [resetPassword, setResetPassword] = useState("");
   const [showResetPassword, setShowResetPassword] = useState(false);
+  const [promos, setPromos] = useState([]);
+  const [promoForm, setPromoForm] = useState(emptyPromo);
+  const [showPromoForm, setShowPromoForm] = useState(false);
+  const [editingPromo, setEditingPromo] = useState(null);
+  const [promoToDelete, setPromoToDelete] = useState(null);
   const isAdmin = session?.role === "admin";
   useEffect(() => {
     if (staffRoles.includes(session?.role) && tab === "Products") {
       api.get("/api/admin/categories").then(({ data }) => setCategoryOptions(data.categories)).catch(err => toast.error(errorMessage(err)));
     }
   }, [session, tab]);
+  const loadPromos = useCallback(() => {
+    api.get("/api/admin/promos").then(({ data }) => setPromos(data.promos)).catch(err => toast.error(errorMessage(err)));
+  }, []);
+  useEffect(() => {
+    if (staffRoles.includes(session?.role) && tab === "Promotions") loadPromos();
+  }, [session, tab, loadPromos]);
   const imageUrls = form.images.split("\n").map(url => url.trim()).filter(Boolean);
 
   const uploadImages = async event => {
@@ -205,6 +218,60 @@ export default function Admin() {
     } catch (err) { toast.error(errorMessage(err)); }
     finally { setBusy(false); }
   };
+  const editPromo = promo => {
+    setEditingPromo(promo._id);
+    setPromoForm({ title: promo.title, subtitle: promo.subtitle, image: promo.image || "", ctaText: promo.ctaText, ctaLink: promo.ctaLink, buttonColor: promo.buttonColor || "#1c1917", buttonTextColor: promo.buttonTextColor || "#ffffff", active: promo.active });
+    setShowPromoForm(true);
+  };
+  const uploadPromoImage = async event => {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file || uploading || busy) return;
+    if (!["image/jpeg", "image/png", "image/gif", "image/webp"].includes(file.type)) return toast.error("Choose a JPEG, PNG, GIF, or WebP image.");
+    if (file.size > 5 * 1024 * 1024) return toast.error("Image must be 5 MB or smaller.");
+    setUploading(true);
+    try {
+      const { data } = await api.post("/api/admin/images", file, { headers: { "Content-Type": file.type } });
+      const image = new URL(data.path, new URL(api.defaults.baseURL, window.location.origin)).href;
+      setPromoForm(current => ({ ...current, image }));
+      toast.success("Image uploaded. Save the popup to publish it.");
+    } catch (err) { toast.error(errorMessage(err)); }
+    finally { setUploading(false); }
+  };
+  const savePromo = async event => {
+    event.preventDefault();
+    if (uploading || busy) return;
+    setBusy(true);
+    try {
+      if (editingPromo) await api.put(`/api/admin/promos/${editingPromo}`, promoForm);
+      else await api.post("/api/admin/promos", promoForm);
+      setShowPromoForm(false);
+      setEditingPromo(null);
+      setPromoForm(emptyPromo);
+      toast.success("Popup saved");
+      loadPromos();
+    } catch (err) { toast.error(errorMessage(err)); }
+    finally { setBusy(false); }
+  };
+  const togglePromoActive = async promo => {
+    setBusy(true);
+    try {
+      await api.put(`/api/admin/promos/${promo._id}`, { title: promo.title, image: promo.image || "", subtitle: promo.subtitle, ctaText: promo.ctaText, ctaLink: promo.ctaLink, active: !promo.active });
+      loadPromos();
+    } catch (err) { toast.error(errorMessage(err)); }
+    finally { setBusy(false); }
+  };
+  const deletePromo = async promo => {
+    if (busy) return;
+    setBusy(true);
+    try {
+      await api.delete(`/api/admin/promos/${promo._id}`);
+      toast.success("Popup deleted");
+      setPromoToDelete(null);
+      loadPromos();
+    } catch (err) { toast.error(errorMessage(err)); }
+    finally { setBusy(false); }
+  };
   const deleteProduct = async product => {
     if (!window.confirm(`Delete ${product.name}? This removes it from the storefront.`)) return;
     setBusy(true);
@@ -247,10 +314,11 @@ export default function Admin() {
 
   return (
     <div className="admin-layout min-h-screen bg-stone-50 text-stone-800 lg:flex">
+      {promoToDelete && <DeletePromoModal promo={promoToDelete} busy={busy} onCancel={() => setPromoToDelete(null)} onConfirm={() => deletePromo(promoToDelete)} />}
       <aside className="bg-green-950 text-white p-4 sm:p-6 lg:w-60 lg:min-h-screen shrink-0">
         <Link to="/" className="text-2xl font-semibold">Ayurvedic<span className="block text-xs tracking-widest uppercase text-green-200 mt-2">{isAdmin ? "Project administration" : "Product administration"}</span></Link>
         <nav aria-label="Admin sections" className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-1 gap-2 mt-5 lg:mt-8">
-          {(isAdmin ? ["Overview", "Products", "Categories", "Users"] : ["Overview", "Products", "Categories"]).map(item => <button disabled={uploading || busy || categoryBusy} key={item} onClick={() => { setTab(item); setShowForm(false); }} aria-current={tab === item ? "page" : undefined} className={`text-left rounded-lg px-4 py-3 ${tab === item ? "bg-white/15" : "hover:bg-white/10"}`}>{item}</button>)}
+          {(isAdmin ? ["Overview", "Products", "Categories", "Promotions", "Users"] : ["Overview", "Products", "Categories", "Promotions"]).map(item => <button disabled={uploading || busy || categoryBusy} key={item} onClick={() => { setTab(item); setShowForm(false); }} aria-current={tab === item ? "page" : undefined} className={`text-left rounded-lg px-4 py-3 ${tab === item ? "bg-white/15" : "hover:bg-white/10"}`}>{item}</button>)}
         </nav>
         <Link to="/" className="block mt-4 lg:mt-10 text-green-200 text-sm">← View storefront</Link>
       </aside>
@@ -362,6 +430,50 @@ export default function Admin() {
             </tbody></table></div>
           </>}
           {tab === "Categories" && <AdminCategories onBusyChange={setCategoryBusy} />}
+          {tab === "Promotions" && <>
+            <div className="flex flex-wrap justify-between gap-3 mb-6">
+              <div>
+                <p className="text-stone-500">Popups shown to shoppers when the storefront loads. Add several and they'll appear one after another; each shopper sees them once per visit.</p>
+              </div>
+              {!showPromoForm && <button disabled={busy} className={buttonStyle} onClick={() => { setEditingPromo(null); setPromoForm(emptyPromo); setShowPromoForm(true); }}>+ Add popup</button>}
+            </div>
+            {showPromoForm && <form onSubmit={savePromo} className="bg-white rounded-xl border border-stone-200 p-4 sm:p-6 mb-6 space-y-4">
+              <h2 className="text-xl font-semibold">{editingPromo ? "Edit popup" : "New popup"}</h2>
+              <div className="space-y-3 rounded-xl border border-stone-200 bg-stone-50 p-4">
+                <label className="block text-sm font-medium">Popup image (optional)
+                  <input type="file" accept="image/jpeg,image/png,image/gif,image/webp" disabled={busy || uploading} onChange={uploadPromoImage} aria-describedby="promo-image-help" className="mt-2 block w-full rounded-lg border border-dashed border-green-700 bg-green-50 p-4 text-sm file:mr-4 file:rounded-md file:border-0 file:bg-green-800 file:px-4 file:py-2 file:text-white disabled:opacity-50" />
+                </label>
+                <p id="promo-image-help" className="text-xs text-stone-500">This image appears above the title in the shopper popup. JPEG, PNG, GIF or WebP, up to 5 MB.</p>
+                {uploading && <p role="status" className="text-sm text-green-800">Uploading image…</p>}
+                {promoForm.image && <div>
+                  <img src={promoForm.image} alt="Popup image preview" className="max-h-64 w-full rounded-lg bg-white object-contain" />
+                  <button type="button" disabled={busy || uploading} onClick={() => setPromoForm(current => ({ ...current, image: "" }))} className="mt-2 text-sm font-medium text-red-700 disabled:opacity-50">Remove image</button>
+                </div>}
+              </div>
+              <label className="block text-sm">Title{promoForm.image ? " (optional)" : ""}<input required={!promoForm.image} maxLength={80} value={promoForm.title} onChange={e => setPromoForm({ ...promoForm, title: e.target.value })} className={inputStyle} placeholder="Republic Day Sale" /></label>
+              <label className="block text-sm">Subtitle<input maxLength={200} value={promoForm.subtitle} onChange={e => setPromoForm({ ...promoForm, subtitle: e.target.value })} className={inputStyle} placeholder="Up to 30% off across the store" /></label>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <label className="block text-sm">Button text<input required maxLength={40} value={promoForm.ctaText} onChange={e => setPromoForm({ ...promoForm, ctaText: e.target.value })} className={inputStyle} /></label>
+                <label className="block text-sm">Button link<input required maxLength={300} value={promoForm.ctaLink} onChange={e => setPromoForm({ ...promoForm, ctaLink: e.target.value })} className={inputStyle} placeholder="/products" /><span className="mt-1 block text-xs text-stone-500">Start with / for a page on this site, or use a full https:// link.</span></label>
+              </div>
+              <div className="flex flex-wrap items-center gap-5">
+                <label className="flex items-center gap-3 text-sm">Button color<input type="color" value={promoForm.buttonColor} onChange={e => setPromoForm({ ...promoForm, buttonColor: e.target.value })} className="h-10 w-14 cursor-pointer rounded border border-stone-300" /></label>
+                <label className="flex items-center gap-3 text-sm">Button text color<input type="color" value={promoForm.buttonTextColor} onChange={e => setPromoForm({ ...promoForm, buttonTextColor: e.target.value })} className="h-10 w-14 cursor-pointer rounded border border-stone-300" /></label>
+                <span className="rounded-lg px-6 py-3 text-sm font-semibold" style={{ backgroundColor: promoForm.buttonColor, color: promoForm.buttonTextColor }}>{promoForm.ctaText || "Shop now"}</span>
+              </div>
+              <label className="flex gap-2 items-center"><input type="checkbox" checked={promoForm.active} onChange={e => setPromoForm({ ...promoForm, active: e.target.checked })} />Active</label>
+              <div className="flex flex-wrap gap-3"><button disabled={busy || uploading} className={buttonStyle}>{busy ? "Saving…" : "Save popup"}</button><button type="button" disabled={busy || uploading} onClick={() => setShowPromoForm(false)} className="px-4 py-2">Cancel</button></div>
+            </form>}
+            <div className="overflow-x-auto bg-white rounded-xl border border-stone-200"><table className="admin-table w-full text-left text-sm"><thead className="bg-stone-100"><tr>{["Title", "Button", "Status", "Actions"].map(label => <th key={label} className="p-4">{label}</th>)}</tr></thead><tbody>
+              {promos.map(promo => <tr key={promo._id} className="border-t border-stone-100">
+                <td data-label="Title" className="p-4"><p className="font-medium">{promo.title || "Image popup"}</p>{promo.subtitle && <p className="text-xs text-stone-500">{promo.subtitle}</p>}</td>
+                <td data-label="Button" className="p-4"><p>{promo.ctaText}</p><p className="break-all text-xs text-stone-500">{promo.ctaLink}</p></td>
+                <td data-label="Status" className="p-4"><button disabled={busy} onClick={() => togglePromoActive(promo)} className={`rounded-full px-3 py-1 whitespace-nowrap disabled:opacity-50 ${promo.active ? "bg-green-100 text-green-800" : "bg-stone-100 text-stone-500"}`}>{promo.active ? "Active" : "Inactive"}</button></td>
+                <td data-label="Actions" className="p-4 whitespace-nowrap"><button disabled={busy || uploading} onClick={() => editPromo(promo)} className="text-green-800 mr-4 disabled:opacity-50">Edit</button><button disabled={busy || uploading} onClick={() => setPromoToDelete(promo)} className="text-red-700 disabled:opacity-50">Delete</button></td>
+              </tr>)}
+              {!promos.length && <tr><td colSpan={4} className="p-10 text-center text-stone-500">No popups yet. Add one to promote a sale on the storefront.</td></tr>}
+            </tbody></table></div>
+          </>}
           {tab === "Users" && isAdmin && <>
             <div className="mb-6 rounded-xl border border-stone-200 bg-white p-4 sm:p-6">
               <div className="flex flex-wrap items-center justify-between gap-3">

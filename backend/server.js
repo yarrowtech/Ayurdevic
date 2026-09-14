@@ -7,6 +7,7 @@ import userRouter from "./routes/user.Route.js";
 import adminRouter from "./routes/admin.Route.js";
 import Product from "./model/Product.js";
 import Category from "./model/Category.js";
+import Promo from "./model/Promo.js";
 import { uploadDirectory } from "./configs/imageUpload.js";
 
 const app = express();
@@ -41,6 +42,10 @@ app.get("/api/products", async (req, res) => {
 app.get("/api/categories", async (req, res) => {
   try { res.json({ success: true, categories: await Category.find({ visible: true }).sort({ createdAt: -1 }) }); }
   catch { res.status(500).json({ success: false, message: "Unable to load categories." }); }
+});
+app.get("/api/promos", async (req, res) => {
+  try { res.json({ success: true, promos: await Promo.find({ active: true }).sort({ createdAt: 1 }) }); }
+  catch { res.status(500).json({ success: false, message: "Unable to load popups." }); }
 });
 
 app.listen(port, () => {
