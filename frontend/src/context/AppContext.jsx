@@ -1,3 +1,4 @@
+import { getProductPrice } from "../services/productPrice";
 import { createContext, useContext, useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../services/api";
@@ -91,6 +92,9 @@ export const AppContextProvider = ({ children }) => {
         setCartItems(cartData);
     }
 
+    // Empty the cart (after an order is placed)
+    const clearCart = () => setCartItems({});
+
     // Get cart item count
     const getCartCount = ()=> {
         let totalCount = 0;
@@ -106,10 +110,10 @@ export const AppContextProvider = ({ children }) => {
         for(const items in cartItems){
             let itemInfo = products.find((product) => product._id === items);
             if(itemInfo && cartItems[items] > 0){
-                totalAmount += itemInfo.offerPrice * cartItems[items];
+                totalAmount += getProductPrice(itemInfo) * cartItems[items];
             }
         }
-        return Math.floor(totalAmount * 100) / 100;
+        return Math.round(totalAmount * 100) / 100;
     }
 
     useEffect(() => {
@@ -126,7 +130,7 @@ export const AppContextProvider = ({ children }) => {
         return () => document.removeEventListener('visibilitychange', refreshVisibleCatalog);
     }, [refreshProducts]);
 
-    const value = { navigate, user, setUser, logout, isSeller, setIsSeller, showUserLogin, setShowUserLogin, products, currency, addToCart, updateCartItem, removeFromCart, cartItems, searchQuery, setSearchQuery, getCartAmount, getCartCount, refreshProducts };
+    const value = { navigate, user, setUser, logout, isSeller, setIsSeller, showUserLogin, setShowUserLogin, products, currency, addToCart, updateCartItem, removeFromCart, clearCart, cartItems, searchQuery, setSearchQuery, getCartAmount, getCartCount, refreshProducts };
     return <AppContext.Provider value={{ ...value, categories, refreshCategories }}>
         {children}
     </AppContext.Provider>;

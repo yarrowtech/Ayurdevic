@@ -1,10 +1,11 @@
+import { getProductPrice } from "../services/productPrice";
 import { assets } from "../assets/assets";
 import { useAppContext } from "../context/AppContext";
 
 const ProductCard = ({ product }) => {
     const {currency, addToCart, removeFromCart, cartItems, navigate} = useAppContext();
-    const discount = product?.price > 0 && product.offerPrice >= 0 && product.offerPrice < product.price
-        ? Math.round((product.price - product.offerPrice) / product.price * 100)
+    const discount = product?.price > 0 && getProductPrice(product) >= 0 && getProductPrice(product) < product.price
+        ? Math.round((product.price - getProductPrice(product)) / product.price * 100)
         : 0;
 
     return product && (
@@ -14,11 +15,12 @@ const ProductCard = ({ product }) => {
             </div>
             <div className="text-gray-500/60 text-sm min-w-0 flex flex-1 flex-col">
                 <p className="truncate">{product.category}</p>
+                {product.extraDiscountPercent > 0 && <p className="my-1 text-xs font-semibold text-green-800">Extra {product.extraDiscountPercent}% off sale price</p>}
                 <p className="text-gray-700 font-medium text-sm sm:text-base leading-5 line-clamp-2 min-h-10 w-full" title={product.name}>{product.name}</p>
                 <div className="flex flex-wrap items-end justify-between gap-3 pt-3 mt-auto">
                     <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
-                        <span aria-label="Selling price" className="whitespace-nowrap text-xl sm:text-2xl font-bold leading-tight text-green-900">{currency} {Number(product.offerPrice).toLocaleString('en-IN')}</span>
-                        {product.price > product.offerPrice && <span aria-label="Original price" className="whitespace-nowrap text-xs sm:text-sm text-stone-500 line-through">{currency} {Number(product.price).toLocaleString('en-IN')}</span>}
+                        <span aria-label="Selling price" className="whitespace-nowrap text-xl sm:text-2xl font-bold leading-tight text-green-900">{currency} {Number(getProductPrice(product)).toLocaleString('en-IN')}</span>
+                        {product.price > getProductPrice(product) && <span aria-label="Original price" className="whitespace-nowrap text-xs sm:text-sm text-stone-500 line-through">{currency} {Number(product.price).toLocaleString('en-IN')}</span>}
                         {discount > 0 && <span className="whitespace-nowrap rounded bg-green-100 px-2 py-1 text-xs font-semibold text-green-800">{discount}% OFF</span>}
                     </div>
                     <div onClick={(e) => {e.stopPropagation();}} className="text-green-800">

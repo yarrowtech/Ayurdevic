@@ -2,10 +2,11 @@ import React, { useEffect, useState } from 'react'
 import { NavLink } from 'react-router-dom'
 import { assets } from '../assets/assets';
 import { useAppContext } from '../context/AppContext';
+import ContactModal from './ContactModal';
 
 const Navbar = () => {
   const [open, setOpen] = useState(false);
-  const [accountOpen, setAccountOpen] = useState(false);
+  const [contactOpen, setContactOpen] = useState(false);
   const { user, setShowUserLogin, navigate, setSearchQuery, searchQuery, getCartCount, logout } = useAppContext();
 
   useEffect(()=> {
@@ -48,32 +49,19 @@ const Navbar = () => {
 
       {/* Desktop Menu */}
       <div className="hidden xl:flex items-center gap-5">
-        <NavLink to="/">
+        <NavLink to="/" className={({ isActive }) => `${linkClass(isActive)} inline-flex min-h-11 items-center pt-3 leading-6`}>
           {({ isActive }) => (
-            <span className={linkClass(isActive)}>
+            <>
               Home
               {isActive && <Dot />}
-            </span>
+            </>
           )}
         </NavLink>
 
-        <NavLink to="/products">
-          {({ isActive }) => (
-            <span className={linkClass(isActive)}>
-              All Products
-              {isActive && <Dot />}
-            </span>
-          )}
-        </NavLink>
-
-        <NavLink to="/contact">
-          {({ isActive }) => (
-            <span className={linkClass(isActive)}>
-              Contact
-              {isActive && <Dot />}
-            </span>
-          )}
-        </NavLink>
+        <button type="button" aria-haspopup="dialog" onClick={() => setContactOpen(true)} className={`${linkClass(contactOpen)} inline-flex min-h-11 items-center pt-3 leading-6`}>
+          Contact
+          {contactOpen && <Dot />}
+        </button>
 
         {/* Search */}
         <div
@@ -126,20 +114,7 @@ const Navbar = () => {
             Login
           </button>
         ) : (
-          <div className='relative group'>
-            <button type="button" aria-label="Account menu" aria-expanded={accountOpen} onClick={() => setAccountOpen(current => !current)} className="p-1"><img src={assets.profile_icon} className="w-10" alt="" /></button>
-            <ul
-              className={`${accountOpen ? 'block' : 'hidden'}
-                absolute top-12 right-0
-                bg-white/90 backdrop-blur
-                shadow-lg border border-[var(--clay)]/70
-                py-2.5 w-60 rounded-md text-sm z-40
-              `}
-            >
-              <li className="px-4 py-2"><p className="break-words font-medium">{user.name}</p><p className="break-all text-xs text-stone-500">{user.email}</p></li>
-              <li><button type="button" onClick={async () => { await logout(); setAccountOpen(false); }} className="min-h-11 w-full px-4 text-left text-green-800 hover:bg-green-50">Sign out</button></li>
-            </ul>
-          </div>
+          <NavLink to="/account" aria-label="My account" className="p-1"><img src={assets.profile_icon} className="w-10" alt="" /></NavLink>
         )}
       </div>
 
@@ -195,27 +170,17 @@ const Navbar = () => {
             )}
           </NavLink>
 
-          <NavLink to="/products" onClick={() => setOpen(false)}>
-            {({ isActive }) => (
-              <span className={`${linkClass(isActive)} block w-full py-2`}>
-                All Products
-                {isActive && <Dot />}
-              </span>
-            )}
-          </NavLink>
-
-          {user && <div className="max-w-full py-2"><p className="break-words font-medium">{user.name}</p><p className="break-all text-sm text-stone-500">{user.email}</p></div>}
+          {user && <>
+            <div className="max-w-full py-2"><p className="break-words font-medium">{user.name}</p><p className="break-all text-sm text-stone-500">{user.email}</p></div>
+            <NavLink to="/account" onClick={() => setOpen(false)} className="block w-full py-2">My account</NavLink>
+            <NavLink to="/account?tab=orders" onClick={() => setOpen(false)} className="block w-full py-2">Orders</NavLink>
+            <NavLink to="/account?tab=addresses" onClick={() => setOpen(false)} className="block w-full py-2">Addresses</NavLink>
+            <NavLink to="/account?tab=support" onClick={() => setOpen(false)} className="block w-full py-2">Customer support</NavLink>
+          </>}
 
           {user?.role === 'admin' && <NavLink to="/admin" onClick={() => setOpen(false)}>Admin panel</NavLink>}
 
-          <NavLink to="/contact" onClick={() => setOpen(false)}>
-            {({ isActive }) => (
-              <span className={`${linkClass(isActive)} block w-full py-2`}>
-                Contact
-                {isActive && <Dot />}
-              </span>
-            )}
-          </NavLink>
+          <button type="button" aria-haspopup="dialog" onClick={() => { setOpen(false); setContactOpen(true); }} className={`${linkClass(false)} block min-h-11 w-full py-2 text-left`}>Contact</button>
 
           {!user ? (
             <button
@@ -243,6 +208,7 @@ const Navbar = () => {
           )}
         </div>
       )}
+      {contactOpen && <ContactModal onClose={() => setContactOpen(false)} />}
     </nav>
   )
 }

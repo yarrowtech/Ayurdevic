@@ -1,3 +1,4 @@
+import { getProductPrice } from "../services/productPrice";
 import { useEffect, useState } from "react";
 import { useAppContext } from "../context/AppContext";
 import { Link, useParams } from "react-router-dom";
@@ -13,6 +14,12 @@ const ProductDetails = () => {
     const [thumbnail, setThumbnail] = useState(null);
 
     const product = products.find((item) => item._id === id);
+    const descriptionLines = (Array.isArray(product?.description)
+        ? product.description
+        : typeof product?.description === "string" ? product.description.split("\n") : [])
+        .filter(line => typeof line === "string" && line.trim())
+        .map(line => line.trim());
+    const savings = product ? Math.max(0, product.price - getProductPrice(product)) : 0;
 
     useEffect(() => {
         if (product) {
@@ -47,7 +54,7 @@ const ProductDetails = () => {
                 <div className="flex flex-wrap items-center gap-2 break-words text-sm text-[var(--ink)]/80 font-medium">
                     <Link to={"/"} type="button" aria-label="Home" >
                         <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M16 7.609c.352 0 .69.122.96.343l.111.1 6.25 6.25v.001a1.5 1.5 0 0 1 .445 1.071v7.5a.89.89 0 0 1-.891.891H9.125a.89.89 0 0 1-.89-.89v-7.5l.006-.149a1.5 1.5 0 0 1 .337-.813l.1-.11 6.25-6.25c.285-.285.67-.444 1.072-.444Zm5.984 7.876L16 9.5l-5.984 5.985v6.499h11.968z" fill="#475569" stroke="#475569" stroke-width=".094" />
+                            <path d="M16 7.609c.352 0 .69.122.96.343l.111.1 6.25 6.25v.001a1.5 1.5 0 0 1 .445 1.071v7.5a.89.89 0 0 1-.891.891H9.125a.89.89 0 0 1-.89-.89v-7.5l.006-.149a1.5 1.5 0 0 1 .337-.813l.1-.11 6.25-6.25c.285-.285.67-.444 1.072-.444Zm5.984 7.876L16 9.5l-5.984 5.985v6.499h11.968z" fill="#475569" stroke="#475569" strokeWidth=".094" />
                         </svg>
                     </Link>
                     <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -129,18 +136,42 @@ const ProductDetails = () => {
                             </p>
                             <p className="text-2xl md:text-3xl font-semibold text-[var(--ink)]">
                                 MRP: {currency}
-                                {product.offerPrice}
+                                {getProductPrice(product)}
                             </p>
                             <span className="text-[var(--ink)]/60">(inclusive of all taxes)</span>
+                            {product.extraDiscountPercent > 0 && <p className="mt-3 rounded-lg bg-green-100 px-3 py-2 font-medium text-green-900">Extra {product.extraDiscountPercent}% off {currency}{product.offerPrice} — applied automatically</p>}
                         </div>
 
                         {/* About */}
-                        <p className="text-base font-medium mt-6 text-[var(--ink)]">About Product</p>
-                        <ul className="list-disc ml-5 text-[var(--ink)]/70 leading-relaxed">
-                            {product.description.map((desc, index) => (
-                                <li key={index}>{desc}</li>
-                            ))}
-                        </ul>
+                        <section aria-labelledby="product-details-title" className="mt-6 rounded-2xl border border-[var(--clay)]/70 bg-white p-5 sm:p-6">
+                            <h2 id="product-details-title" className="text-lg font-semibold text-[var(--ink)]">Product details</h2>
+                            <dl className="mt-4 divide-y divide-stone-100 text-sm">
+                                {[
+                                    ["Product", product.name],
+                                    ["Category", product.category],
+                                    ["Availability", product.inStock ? "In stock" : "Out of stock"],
+                                    ["MRP", `${currency}${product.price}`],
+                                    ...(product.extraDiscountPercent > 0 ? [["Extra discount", `${product.extraDiscountPercent}% off sale price`]] : []),
+                                    ["Selling price", `${currency}${getProductPrice(product)}`],
+                                    ...(savings > 0 ? [["You save", `${currency}${Number(savings.toFixed(2))} (${Math.round(savings / product.price * 100)}%)`]] : []),
+                                ].map(([label, value]) => (
+                                    <div key={label} className="grid grid-cols-[minmax(0,1fr)_minmax(0,2fr)] gap-4 py-3">
+                                        <dt className="text-stone-500">{label}</dt>
+                                        <dd className={`break-words font-medium ${label === "Availability" ? product.inStock ? "text-green-800" : "text-red-700" : "text-[var(--ink)]"}`}>{value}</dd>
+                                    </div>
+                                ))}
+                            </dl>
+                            <div className="mt-4 border-t border-stone-100 pt-4">
+                                <h3 className="font-medium text-[var(--ink)]">About this product</h3>
+                                {descriptionLines.length > 0 ? (
+                                    <ul className="mt-2 ml-5 list-disc space-y-2 leading-relaxed text-[var(--ink)]/70">
+                                        {descriptionLines.map((desc, index) => <li key={index} className="whitespace-pre-line break-words">{desc}</li>)}
+                                    </ul>
+                                ) : (
+                                    <p className="mt-2 leading-relaxed text-stone-500">A detailed description hasn't been added yet. <Link to="/contact" className="text-green-800 underline">Contact the store</Link> for more information about this product.</p>
+                                )}
+                            </div>
+                        </section>
 
                         {/* CTAs */}
                         <div className="flex flex-col sm:flex-row items-stretch sm:items-center mt-10 gap-3 sm:gap-4 text-base">

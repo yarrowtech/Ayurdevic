@@ -1,3 +1,4 @@
+import { getProductPrice } from "../services/productPrice";
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAppContext } from '../context/AppContext';
@@ -13,9 +14,9 @@ export default function BannerCarousel() {
   const featured = products.filter(product => product.showInBanner && product.inStock);
   const slides = featured.length ? featured.map(product => ({
     title: product.name, text: product.description?.[0] || '', image: product.image?.[0],
-    price: product.offerPrice, regularPrice: product.price,
-    discount: product.price > 0 && product.offerPrice >= 0 && product.offerPrice < product.price
-      ? Math.round((product.price - product.offerPrice) / product.price * 100) : 0,
+    price: getProductPrice(product), regularPrice: product.price,
+    discount: product.price > 0 && getProductPrice(product) >= 0 && getProductPrice(product) < product.price
+      ? Math.round((product.price - getProductPrice(product)) / product.price * 100) : 0,
     cta: 'View product', to: `/products/${encodeURIComponent(product.category.toLowerCase())}/${product._id}`,
     from: '#ffffff', to2: '#ffffff', ink: 'var(--ink)',
   })) : defaultSlides;

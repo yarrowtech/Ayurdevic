@@ -41,12 +41,16 @@ import ProductCategory from './pages/ProductCategory';
 import ProductDetails from './pages/ProductDetails';
 import Cart from './pages/Cart';
 import Admin from './pages/Admin';
+import Account from './pages/Account';
 import Contact from './pages/Contact';
 import NotFound from './pages/NotFound';
 
 const App = () => {
-  const isSellerPath = useLocation().pathname.includes("seller");
-  const isAdminPath = /^\/admin(?:\/|$)/.test(useLocation().pathname);
+  const { pathname } = useLocation();
+  const isSellerPath = pathname.includes("seller");
+  const isAdminPath = /^\/admin(?:\/|$)/.test(pathname);
+  const isAccountPath = /^\/account(?:\/|$)/i.test(pathname);
+  const isProductPath = /^\/products(?:\/|$)/i.test(pathname);
   const { showUserLogin } = useAppContext();
  
   return (
@@ -54,7 +58,7 @@ const App = () => {
       {!isSellerPath && !isAdminPath && (
         <header className="sticky top-0 z-50">
           <Navbar />
-          <CategoryStrip />
+          {!isAccountPath && !isProductPath && <CategoryStrip />}
         </header>
       )}
       {showUserLogin ? <Login /> : null}
@@ -67,6 +71,7 @@ const App = () => {
           <Route path="/products/:category" element={<ProductCategory />} />
           <Route path="/products/:category/:id" element={<ProductDetails />} />
           <Route path='/cart' element={<Cart />} />
+          <Route path='/account' element={<Account />} />
           <Route path='/admin/*' element={<Admin />} />
           <Route path='/contact' element={<Contact />} />
           <Route path='*' element={<NotFound />} />

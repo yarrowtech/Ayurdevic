@@ -6,7 +6,7 @@ import { seedAdminAccount } from "./seedAdminAccount.js";
 try {
   const email = process.env.ADMIN_EMAIL?.trim().toLowerCase();
   const password = process.env.ADMIN_PASSWORD;
-  const name = process.env.ADMIN_NAME?.trim() || "Store Admin";
+  const name = process.env.ADMIN_NAME?.trim() || "Project Admin";
   if (!process.env.MONGO_URI || !email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || !password || password.length < 12) {
     throw new Error("Set MONGO_URI, ADMIN_EMAIL, and ADMIN_PASSWORD (at least 12 characters) in backend/.env.");
   }
