@@ -4,6 +4,7 @@ import BannerCarousel from '../components/BannerCarousel'
 import Categories from '../components/Categories'
 import TrendingDeals from '../components/TrendingDeals'
 import BestSeller from '../components/BestSeller'
+import CategoryProducts from '../components/CategoryProducts'
 import NewsLetter from '../components/NewsLetter'
 
 const Home = () => {
@@ -13,6 +14,7 @@ const Home = () => {
       <Categories />
       <TrendingDeals />
       <BestSeller />
+      <CategoryProducts />
       <NewsLetter />
     </div>
   )
