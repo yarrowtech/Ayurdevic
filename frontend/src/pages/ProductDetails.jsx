@@ -105,12 +105,17 @@ const ProductDetails = () => {
                         {/* Selected */}
                         <div
                             className="
-                bg-white rounded-2xl overflow-hidden
+                bg-white rounded-2xl overflow-hidden relative
                 border border-[var(--clay)]/70
                 w-full aspect-square
                 shadow-sm
               "
                         >
+                            {product.isBestSeller && (
+                                <span className="absolute left-3 top-3 z-10 -rotate-12 select-none rounded-full border-2 border-amber-500 bg-amber-50/95 px-3 py-1.5 text-xs font-bold uppercase tracking-wide text-amber-700 shadow-sm">
+                                    Best Seller
+                                </span>
+                            )}
                             <img src={thumbnail} alt={product.name} className="w-full h-full object-contain p-4" />
                         </div>
                     </div>

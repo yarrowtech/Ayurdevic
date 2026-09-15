@@ -10,7 +10,12 @@ const ProductCard = ({ product }) => {
 
     return product && (
         <div onClick={() => {navigate(`/products/${product.category.toLowerCase()}/${product._id}`); scrollTo(0, 0);}} className="border border-gray-500/20 rounded-md p-3 sm:p-4 bg-white min-w-0 w-full flex flex-col cursor-pointer transition-all duration-200 hover:-translate-y-1 hover:shadow-lg hover:shadow-black/5">
-            <div className="group cursor-pointer flex aspect-square w-full items-center justify-center overflow-hidden p-3">
+            <div className="group cursor-pointer relative flex aspect-square w-full items-center justify-center overflow-hidden p-3">
+                {product.isBestSeller && (
+                    <span className="absolute left-1 top-1 z-10 -rotate-12 select-none rounded-full border-2 border-amber-500 bg-amber-50/95 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-amber-700 shadow-sm">
+                        Best Seller
+                    </span>
+                )}
                 <img className="h-full w-full object-contain group-hover:scale-105 transition-transform" src={product.image[0]} alt={product.name} />
             </div>
             <div className="text-gray-500/60 text-sm min-w-0 flex flex-1 flex-col">

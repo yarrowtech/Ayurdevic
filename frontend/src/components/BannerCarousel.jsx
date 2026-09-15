@@ -14,7 +14,7 @@ export default function BannerCarousel() {
   const featured = products.filter(product => product.showInBanner && product.inStock);
   const slides = featured.length ? featured.map(product => ({
     title: product.name, text: product.description?.[0] || '', image: product.image?.[0],
-    price: getProductPrice(product), regularPrice: product.price,
+    price: getProductPrice(product), regularPrice: product.price, isBestSeller: product.isBestSeller,
     discount: product.price > 0 && getProductPrice(product) >= 0 && getProductPrice(product) < product.price
       ? Math.round((product.price - getProductPrice(product)) / product.price * 100) : 0,
     cta: 'View product', to: `/products/${encodeURIComponent(product.category.toLowerCase())}/${product._id}`,
@@ -78,7 +78,10 @@ export default function BannerCarousel() {
             </div>}
             <Link to={slide.to} onClick={() => scrollTo(0, 0)} className={`inline-flex min-h-11 items-center justify-center rounded-lg px-3 py-2 text-xs font-semibold shadow-sm sm:text-sm ${slide.image ? 'bg-[var(--herbal)] text-white hover:bg-[var(--herbal-dark)]' : 'bg-white/95 text-green-900 hover:bg-white'}`}>{slide.cta}</Link>
           </div>
-          {slide.image && <Link to={slide.to} aria-label={`View ${slide.title}`} className="flex h-48 min-w-0 items-center justify-center self-center sm:h-60"><img src={slide.image} alt={slide.title} className="h-full w-full object-contain" /></Link>}
+          {slide.image && <Link to={slide.to} aria-label={`View ${slide.title}`} className="relative flex h-48 min-w-0 items-center justify-center self-center sm:h-60">
+            {slide.isBestSeller && <span className="absolute left-1 top-1 z-10 -rotate-12 select-none rounded-full border-2 border-amber-500 bg-amber-50/95 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-amber-700 shadow-sm">Best Seller</span>}
+            <img src={slide.image} alt={slide.title} className="h-full w-full object-contain" />
+          </Link>}
         </article>)}
       </div>
     </div>
