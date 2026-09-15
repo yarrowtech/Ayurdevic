@@ -12,5 +12,12 @@ export function validateOrderRequest(body = {}) {
   });
   if (!mongoose.isObjectIdOrHexString(addressId)) throw new Error("Choose a delivery address.");
   if (!["COD", "Online"].includes(paymentMethod)) throw new Error("Choose a valid payment method.");
-  return { items: cleanItems, addressId, paymentMethod };
+  const combined = new Map();
+  for (const item of cleanItems) {
+    const id = item.productId.toLowerCase();
+    const quantity = (combined.get(id)?.quantity ?? 0) + item.quantity;
+    if (quantity > 99) throw new Error("Maximum quantity per product is 99.");
+    combined.set(id, { productId: id, quantity });
+  }
+  return { items: [...combined.values()], addressId, paymentMethod };
 }

@@ -9,7 +9,7 @@ import AdminCategories from "../components/AdminCategories";
 import DeletePromoModal from "../components/DeletePromoModal";
 import { assets } from "../assets/assets";
 
-const emptyProduct = { name: "", category: "", price: "", offerPrice: "", extraDiscountPercent: 0, images: "", description: "", inStock: true, showInBanner: false, isBestSeller: false };
+const emptyProduct = { name: "", category: "", price: "", offerPrice: "", extraDiscountPercent: 0, taxRate: 0, bulkMinQuantity: 4, bulkDiscountPercent: 0, images: "", description: "", inStock: true, showInBanner: false, isBestSeller: false };
 const emptyStaff = { name: "", email: "", password: "" };
 const emptyPromo = { title: "", subtitle: "", image: "", ctaText: "Shop now", ctaLink: "/products", buttonColor: "#1c1917", buttonTextColor: "#ffffff", active: true };
 const staffRoles = ["admin", "product_admin"];
@@ -146,6 +146,9 @@ export default function Admin() {
     setForm({
       name: product.name ?? "", category: product.category ?? "",
       price: product.price ?? "", offerPrice: product.offerPrice ?? "", extraDiscountPercent: product.extraDiscountPercent ?? 0,
+      taxRate: product.taxRate ?? 0,
+      bulkMinQuantity: product.bulkMinQuantity ?? 4,
+      bulkDiscountPercent: product.bulkDiscountPercent ?? 0,
       images: (product.image ?? []).join("\n"), description: (product.description ?? []).join("\n"),
       inStock: product.inStock ?? true,
       showInBanner: product.showInBanner ?? false,
@@ -160,6 +163,9 @@ export default function Admin() {
     setBusy(true);
     const data = {
       name: form.name, category: form.category, price: Number(form.price), offerPrice: Number(form.offerPrice), extraDiscountPercent: Number(form.extraDiscountPercent),
+      taxRate: Number(form.taxRate),
+      bulkMinQuantity: Number(form.bulkMinQuantity),
+      bulkDiscountPercent: Number(form.bulkDiscountPercent),
       image: form.images.split("\n").map(s => s.trim()).filter(Boolean),
       description: form.description.split("\n").map(s => s.trim()).filter(Boolean), inStock: form.inStock,
       showInBanner: form.showInBanner,
@@ -411,7 +417,17 @@ export default function Admin() {
                 <label className="block text-sm">Or add image URLs (one HTTP or HTTPS URL per line)<textarea disabled={busy || uploading} rows={3} value={form.images} onChange={e => setForm({ ...form, images: e.target.value })} className={inputStyle} /></label>
               </div>
               <label className="block text-sm">Extra discount (%)<input type="number" min="0" max="100" step="0.01" value={form.extraDiscountPercent} onChange={e => setForm({ ...form, extraDiscountPercent: e.target.value })} className={inputStyle} /><span className="mt-1 block text-xs text-stone-500">Applied on top of the sale price. Set to 0 to remove.</span></label>
-              <p className="rounded-lg bg-green-50 p-3 text-sm font-medium text-green-800">Final selling price: {getProductPrice({ offerPrice: Number(form.offerPrice), extraDiscountPercent: Number(form.extraDiscountPercent) }).toFixed(2)}</p>
+              <label className="block text-sm">Included tax (%)<input required type="number" min="0" max="100" step="0.01" value={form.taxRate} onChange={e => setForm({ ...form, taxRate: e.target.value })} className={inputStyle} /><span className="mt-1 block text-xs text-stone-500">Enter the tax rate for this product. Prices include tax; checkout will not add it again. Use 0 for no tax.</span></label>
+              <fieldset className="rounded-xl border border-green-200 bg-green-50 p-4">
+                <legend className="px-2 font-semibold text-green-900">Bulk discount</legend>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <label className="block text-sm">Minimum quantity<input required type="number" min="2" max="99" step="1" value={form.bulkMinQuantity} onChange={e => setForm({ ...form, bulkMinQuantity: e.target.value })} className={inputStyle} /></label>
+                  <label className="block text-sm">Extra bulk discount (%)<input required type="number" min="0" max="100" step="0.01" value={form.bulkDiscountPercent} onChange={e => setForm({ ...form, bulkDiscountPercent: e.target.value })} className={inputStyle} /></label>
+                </div>
+                <p className="mt-2 text-xs text-stone-600">Applies to every unit of this product when its cart quantity reaches the minimum, after other discounts. Set the percentage to 0 to turn it off.</p>
+                {Number(form.bulkDiscountPercent) > 0 && <p className="mt-3 text-sm font-medium text-green-900">Buy {form.bulkMinQuantity}+ for {getProductPrice({ offerPrice: Number(form.offerPrice), extraDiscountPercent: Number(form.extraDiscountPercent), bulkMinQuantity: Number(form.bulkMinQuantity), bulkDiscountPercent: Number(form.bulkDiscountPercent) }, Number(form.bulkMinQuantity)).toFixed(2)} each (tax included).</p>}
+              </fieldset>
+              <p className="rounded-lg bg-green-50 p-3 text-sm font-medium text-green-800">Final selling price (tax included): {getProductPrice({ offerPrice: Number(form.offerPrice), extraDiscountPercent: Number(form.extraDiscountPercent) }).toFixed(2)}</p>
               <label className="block text-sm">Description (one point per line)<textarea rows={3} value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} className={inputStyle} /></label>
               <label className="flex gap-2 items-center"><input type="checkbox" checked={form.inStock} onChange={e => setForm({ ...form, inStock: e.target.checked })} />In stock</label>
               <div className="rounded-lg border border-green-200 bg-green-50 p-4">

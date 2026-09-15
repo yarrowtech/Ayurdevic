@@ -139,6 +139,7 @@ const ProductDetails = () => {
                                 {getProductPrice(product)}
                             </p>
                             <span className="text-[var(--ink)]/60">(inclusive of all taxes)</span>
+                            {product.bulkDiscountPercent > 0 && <p className="mt-3 rounded-lg bg-green-50 px-3 py-2 font-medium text-green-900">Buy {product.bulkMinQuantity}+ of this product and get an extra {product.bulkDiscountPercent}% off. Applied automatically in your cart.</p>}
                             {product.extraDiscountPercent > 0 && <p className="mt-3 rounded-lg bg-green-100 px-3 py-2 font-medium text-green-900">Extra {product.extraDiscountPercent}% off {currency}{product.offerPrice} — applied automatically</p>}
                         </div>
 

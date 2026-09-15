@@ -29,7 +29,6 @@
 // src/App.jsx
 import React from 'react'
 import Navbar from './components/Navbar'
-import CategoryStrip from './components/CategoryStrip'
 import { Route, Routes, useLocation } from 'react-router-dom'
 import Home from './pages/Home'
 import { Toaster } from "react-hot-toast";
@@ -54,8 +53,6 @@ const App = () => {
   const { pathname } = useLocation();
   const isSellerPath = pathname.includes("seller");
   const isAdminPath = /^\/admin(?:\/|$)/.test(pathname);
-  const isAccountPath = /^\/account(?:\/|$)/i.test(pathname);
-  const isProductPath = /^\/products(?:\/|$)/i.test(pathname);
   const { showUserLogin } = useAppContext();
  
   return (
@@ -63,7 +60,6 @@ const App = () => {
       {!isSellerPath && !isAdminPath && (
         <header className="sticky top-0 z-50">
           <Navbar />
-          {!isAccountPath && !isProductPath && <CategoryStrip />}
         </header>
       )}
       {showUserLogin ? <Login /> : null}

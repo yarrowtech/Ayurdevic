@@ -1,4 +1,4 @@
-import { getProductPrice } from "../services/productPrice";
+import { getProductPrice, getIncludedTax } from "../services/productPrice";
 import { useEffect, useState } from "react"
 import { Link } from "react-router-dom"
 import { toast } from "react-hot-toast"
@@ -28,13 +28,22 @@ const Cart = () => {
         }).catch(() => toast.error("Unable to load your addresses."));
     }, [user]);
 
-    const subtotal = Math.round(cartArray.reduce((sum, item) => sum + getProductPrice(item) * item.quantity, 0) * 100) / 100;
-    const tax = Math.round(subtotal * 0.02 * 100) / 100;
+    const subtotal = Math.round(cartArray.reduce((sum, item) => sum + getProductPrice(item, item.quantity) * item.quantity, 0) * 100) / 100;
+    const itemCount = cartArray.reduce((sum, item) => sum + item.quantity, 0);
+    const savings = cartArray.reduce((sum, item) => sum + Math.max(0, item.price - getProductPrice(item, item.quantity)) * item.quantity, 0);
+    const bulkSavings = cartArray.reduce((sum, item) => sum + (getProductPrice(item) - getProductPrice(item, item.quantity)) * item.quantity, 0);
+    const money = value => `${currency}${value.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    const taxBreakdown = Object.entries(cartArray.reduce((groups, item) => {
+        const rate = item.taxRate ?? 0;
+        groups[rate] = (groups[rate] || 0) + getIncludedTax(getProductPrice(item, item.quantity), item.quantity, rate);
+        return groups;
+    }, {})).sort(([a], [b]) => Number(a) - Number(b));
     const shippingFee = 0;
-    const total = Math.round((subtotal + tax + shippingFee) * 100) / 100;
+    const total = Math.round((subtotal + shippingFee) * 100) / 100;
     const selectedAddress = addresses?.find(a => a._id === selectedAddressId);
 
     const placeOrderNow = async () => {
+        if (placing) return;
         if (!user) return setShowUserLogin(true);
         if (!selectedAddressId) return toast.error("Choose a delivery address.");
         if (!cartArray.length) return;
@@ -86,7 +95,7 @@ const Cart = () => {
                                 </div>
                             </div>
                         </div>
-                        <div className="break-words sm:text-center"><p><span className="sm:hidden">Subtotal: </span>{currency}{(getProductPrice(product) * product.quantity).toFixed(2)}</p>{product.extraDiscountPercent > 0 && <p className="mt-1 text-xs text-green-800">Extra {product.extraDiscountPercent}% off applied</p>}</div>
+                        <div className="break-words sm:text-center"><p><span className="sm:hidden">Subtotal: </span>{currency}{(getProductPrice(product, product.quantity) * product.quantity).toFixed(2)}</p>{product.extraDiscountPercent > 0 && <p className="mt-1 text-xs text-green-800">Extra {product.extraDiscountPercent}% off applied</p>}{product.bulkDiscountPercent > 0 && <p className="mt-1 text-xs text-green-800">{product.quantity >= product.bulkMinQuantity ? `Bulk ${product.bulkDiscountPercent}% off applied` : `Buy ${product.bulkMinQuantity}+ for an extra ${product.bulkDiscountPercent}% off`}</p>}</div>
                         <button aria-label={`Remove ${product.name}`} onClick={()=> removeFromCart(product._id)} className="cursor-pointer min-h-11 min-w-11 mx-auto">
                             <img src={assets.remove_icon} alt="remove" className="inline-block w-6 h-6" />
                         </button>
@@ -100,8 +109,11 @@ const Cart = () => {
 
             </div>
 
-            <div className="lg:max-w-[320px] xl:max-w-[360px] w-full shrink-0 self-start rounded-xl border border-stone-200 bg-white p-5">
-                <h2 className="text-xl md:text-xl font-medium">Order Summary</h2>
+            <div className="lg:max-w-[360px] xl:max-w-[400px] w-full shrink-0 self-start rounded-2xl border border-stone-200 bg-white p-6 shadow-sm sm:p-7">
+                <div className="flex items-center justify-between gap-3">
+                    <h2 className="text-2xl font-semibold tracking-tight">Order summary</h2>
+                    <span className="shrink-0 rounded-full bg-stone-100 px-3 py-1 text-xs font-medium text-stone-600">{itemCount} {itemCount === 1 ? "item" : "items"}</span>
+                </div>
                 <hr className="border-stone-200 my-5" />
 
                 <div className="mb-6">
@@ -113,7 +125,13 @@ const Cart = () => {
                             <p className="text-stone-500">Loading addresses…</p>
                         ) : selectedAddress ? (
                             <div className="flex justify-between items-start gap-2">
-                                <p className="text-stone-600">{selectedAddress.line1}, {selectedAddress.city}, {selectedAddress.state} {selectedAddress.postalCode}</p>
+                                <div className="min-w-0 break-words text-sm leading-6 text-stone-600">
+                                    {selectedAddress.label && <p className="font-semibold text-stone-900">{selectedAddress.label}</p>}
+                                    <p>{selectedAddress.line1}{selectedAddress.line2 ? `, ${selectedAddress.line2}` : ""}</p>
+                                    <p>{selectedAddress.city}, {selectedAddress.state} {selectedAddress.postalCode}</p>
+                                    <p>{selectedAddress.country}</p>
+                                    <p className="mt-1">{selectedAddress.phone}</p>
+                                </div>
                                 <button onClick={() => setShowAddressPicker(current => !current)} className="shrink-0 text-green-800 hover:underline cursor-pointer">Change</button>
                             </div>
                         ) : (
@@ -134,9 +152,9 @@ const Cart = () => {
                         )}
                     </div>
 
-                    <p className="text-sm font-medium uppercase mt-6">Payment Method</p>
+                    <label htmlFor="checkout-payment" className="block text-sm font-medium uppercase mt-6">Payment Method</label>
 
-                    <select value={paymentMethod} onChange={e => setPaymentMethod(e.target.value)} className="w-full border border-stone-300 bg-white px-3 py-2 mt-2 outline-none rounded">
+                    <select id="checkout-payment" disabled={placing} value={paymentMethod} onChange={e => setPaymentMethod(e.target.value)} className="w-full border border-stone-300 bg-white px-3 py-3 mt-2 rounded-lg focus:outline-2 focus:outline-green-800">
                         <option value="COD">Cash On Delivery</option>
                         <option value="Online">Online Payment</option>
                     </select>
@@ -146,17 +164,21 @@ const Cart = () => {
 
                 <div className="text-stone-600 mt-4 space-y-2">
                     <p className="flex justify-between">
-                        <span>Price</span><span>{currency}{subtotal.toFixed(2)}</span>
+                        <span>Subtotal ({itemCount} {itemCount === 1 ? "item" : "items"})</span><span className="tabular-nums">{money(subtotal)}</span>
                     </p>
                     <p className="flex justify-between">
                         <span>Shipping Fee</span><span className="text-green-700">{shippingFee ? `${currency}${shippingFee.toFixed(2)}` : "Free"}</span>
                     </p>
-                    <p className="flex justify-between">
-                        <span>Tax (2%)</span><span>{currency}{tax.toFixed(2)}</span>
+                    {taxBreakdown.map(([rate, amount]) => (
+                        <p key={rate} className="flex justify-between gap-3">
+                            <span>Included tax ({rate}%)</span><span className="tabular-nums">{money(amount)}</span>
+                        </p>
+                    ))}
+                    <p className="flex justify-between border-t border-stone-200 pt-4 text-xl font-semibold mt-4 text-[var(--ink)]">
+                        <span>Total</span><span className="tabular-nums">{money(total)}</span>
                     </p>
-                    <p className="flex justify-between text-lg font-medium mt-3 text-[var(--ink)]">
-                        <span>Total Amount:</span><span>{currency}{total.toFixed(2)}</span>
-                    </p>
+                    {savings > 0 && <p className="rounded-lg bg-green-50 px-3 py-2 text-sm font-medium text-green-800">You save {money(savings)} on your products</p>}
+                    {bulkSavings > 0 && <p className="text-sm text-green-800">Includes {money(bulkSavings)} in bulk savings</p>}
                 </div>
 
                 <button disabled={placing || !cartArray.length} onClick={placeOrderNow} className="w-full py-3 mt-6 cursor-pointer bg-green-800 text-white font-medium hover:bg-green-900 disabled:opacity-50 rounded-lg">

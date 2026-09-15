@@ -7,6 +7,9 @@ const orderItemSchema = new mongoose.Schema(
     image: { type: String, default: "" },
     price: { type: Number, required: true, min: 0 },
     quantity: { type: Number, required: true, min: 1 },
+    bulkDiscountPercent: { type: Number, min: 0, max: 100 },
+    taxRate: { type: Number, min: 0, max: 100 },
+    tax: { type: Number, min: 0 },
   },
   { _id: false }
 );
@@ -33,6 +36,7 @@ const orderSchema = new mongoose.Schema(
     paymentMethod: { type: String, enum: ["COD", "Online"], default: "COD" },
     subtotal: { type: Number, required: true, min: 0 },
     tax: { type: Number, required: true, min: 0 },
+    taxIncluded: { type: Boolean, default: false },
     shippingFee: { type: Number, required: true, min: 0, default: 0 },
     total: { type: Number, required: true, min: 0 },
     status: { type: String, enum: ["Placed", "Confirmed", "Shipped", "Delivered", "Cancelled"], default: "Placed" },
