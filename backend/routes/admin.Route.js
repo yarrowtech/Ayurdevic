@@ -11,6 +11,7 @@ import { validateStaffAccount, validateStaffPassword } from "../configs/validate
 import { imageUpload } from "../configs/imageUpload.js";
 import categoryRouter from "./category.Route.js";
 import promoRouter from "./promo.Route.js";
+import reportRouter from "./report.Route.js";
 
 const router = express.Router();
 // Any signed-in admin or product admin may reach this router; individual
@@ -36,7 +37,8 @@ router.get("/overview", async (req, res) => {
   } catch { res.status(500).json({ success: false, message: "Unable to load dashboard" }); }
 });
 
-// Full admin only: account management.
+// Full admin only: account management and analytics/reports.
+router.use("/reports", authAdmin, reportRouter);
 router.get("/users", authAdmin, async (req, res) => {
   try {
     const users = await User.find().select("name email role createdAt").sort({ createdAt: -1 }).limit(100);

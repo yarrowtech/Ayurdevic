@@ -119,6 +119,52 @@ button, a, input, select, textarea { touch-action: manipulation; }
 
 .banner-slide { animation: banner-fade 0.4s ease; }
 
+/* Skeleton loading placeholders */
+.skeleton {
+  position: relative;
+  overflow: hidden;
+  background: #e7e2d3;
+}
+.skeleton::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.65), transparent);
+  animation: shimmer 1.4s infinite;
+}
+@keyframes shimmer {
+  100% { transform: translateX(100%); }
+}
+
+/* Scroll-reveal: fade + rise into view */
+.reveal {
+  opacity: 0;
+  transform: translateY(18px);
+  transition: opacity 0.5s ease, transform 0.5s ease;
+}
+.reveal-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Cart icon bump when an item is added */
+@keyframes cart-bump {
+  0% { transform: scale(1); }
+  35% { transform: scale(1.3); }
+  65% { transform: scale(0.92); }
+  100% { transform: scale(1); }
+}
+.animate-cart-bump { animation: cart-bump 0.4s ease; }
+
+/* Route-change fade-in */
+@keyframes page-fade-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.page-fade { animation: page-fade-in 0.3s ease; }
+
 @media (prefers-reduced-motion: reduce) {
-  .banner-slide { animation: none; }
+  .banner-slide, .skeleton::after, .reveal, .animate-cart-bump, .page-fade { animation: none !important; transition: none !important; }
+  .reveal { opacity: 1; transform: none; }
 }

@@ -2,10 +2,12 @@ import React from 'react'
 import { useAppContext } from '../context/AppContext'
 import { useParams } from 'react-router-dom';
 import ProductCard from '../components/ProductCard';
+import Reveal from '../components/Reveal';
+import { ProductCardSkeleton } from '../components/Skeleton';
 
 
 const ProductCategory = () => {
-  const { products, categories } = useAppContext();
+  const { products, productsLoading, categories } = useAppContext();
   const { category } = useParams();
 
   const searchCategory = categories.find(
@@ -31,10 +33,16 @@ const ProductCategory = () => {
         </div>
       )}
 
-      {filteredProducts.length > 0 ? (
+      {productsLoading && !products.length ? (
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4 lg:gap-6 mt-6">
-        {filteredProducts.map((product) => (
-          <ProductCard key={product._id} product={product} />
+          {Array.from({ length: 10 }, (_, i) => <ProductCardSkeleton key={i} />)}
+        </div>
+      ) : filteredProducts.length > 0 ? (
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4 lg:gap-6 mt-6">
+        {filteredProducts.map((product, index) => (
+          <Reveal key={product._id} delay={(index % 10) * 40}>
+            <ProductCard product={product} />
+          </Reveal>
         ))}
       </div>
       ) : (

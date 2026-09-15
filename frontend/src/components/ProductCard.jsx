@@ -9,7 +9,7 @@ const ProductCard = ({ product }) => {
         : 0;
 
     return product && (
-        <div onClick={() => {navigate(`/products/${product.category.toLowerCase()}/${product._id}`); scrollTo(0, 0);}} className="border border-gray-500/20 rounded-md p-3 sm:p-4 bg-white min-w-0 w-full flex flex-col">
+        <div onClick={() => {navigate(`/products/${product.category.toLowerCase()}/${product._id}`); scrollTo(0, 0);}} className="border border-gray-500/20 rounded-md p-3 sm:p-4 bg-white min-w-0 w-full flex flex-col cursor-pointer transition-all duration-200 hover:-translate-y-1 hover:shadow-lg hover:shadow-black/5">
             <div className="group cursor-pointer flex aspect-square w-full items-center justify-center overflow-hidden p-3">
                 <img className="h-full w-full object-contain group-hover:scale-105 transition-transform" src={product.image[0]} alt={product.name} />
             </div>
@@ -25,17 +25,17 @@ const ProductCard = ({ product }) => {
                     </div>
                     <div onClick={(e) => {e.stopPropagation();}} className="text-green-800">
                         {!cartItems[product._id] ? (
-                            <button className="flex items-center justify-center gap-1 bg-green-50 border border-green-700 min-w-20 min-h-11 px-2 rounded cursor-pointer" onClick={() => addToCart(product._id)} >
+                            <button className="flex items-center justify-center gap-1 bg-green-50 border border-green-700 min-w-20 min-h-11 px-2 rounded cursor-pointer transition-transform active:scale-90" onClick={() => addToCart(product._id)} >
                                 <img src={assets.cart_icon} alt="cart_icon" />
                                 Add
                             </button>
                         ) : (
                             <div className="flex items-center justify-center bg-green-50 rounded select-none">
-                                <button aria-label={`Decrease ${product.name} quantity`} onClick={() => {removeFromCart(product._id)}} className="cursor-pointer w-9 min-h-11 border border-[var(--herbal)] text-[var(--herbal)] rounded" >
+                                <button aria-label={`Decrease ${product.name} quantity`} onClick={() => {removeFromCart(product._id)}} className="cursor-pointer w-9 min-h-11 border border-[var(--herbal)] text-[var(--herbal)] rounded transition-transform active:scale-90" >
                                     -
                                 </button>
                                 <span className="min-w-5 px-1 text-center">{cartItems[product._id]}</span>
-                                <button aria-label={`Increase ${product.name} quantity`} onClick={() => {addToCart(product._id)}} className="cursor-pointer w-9 min-h-11 border border-[var(--herbal)] text-[var(--herbal)] rounded" >
+                                <button aria-label={`Increase ${product.name} quantity`} onClick={() => {addToCart(product._id)}} className="cursor-pointer w-9 min-h-11 border border-[var(--herbal)] text-[var(--herbal)] rounded transition-transform active:scale-90" >
                                     +
                                 </button>
                             </div>

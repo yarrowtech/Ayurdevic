@@ -66,7 +66,7 @@ const App = () => {
       {!isSellerPath && !isAdminPath && <PromoPopup />}
       <Toaster position="bottom-center" containerStyle={{ bottom: "max(16px, env(safe-area-inset-bottom))" }} />
       
-      <main className={`${isSellerPath || isAdminPath ? "" : "px-4 sm:px-6 lg:px-10 xl:px-16"} min-w-0 flex-grow`}>
+      <main key={pathname} className={`${isSellerPath || isAdminPath ? "" : "px-4 sm:px-6 lg:px-10 xl:px-16"} min-w-0 flex-grow page-fade`}>
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/products" element={<AllProducts />} />

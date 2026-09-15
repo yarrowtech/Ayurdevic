@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { NavLink } from 'react-router-dom'
 import { assets } from '../assets/assets';
 import { useAppContext } from '../context/AppContext';
@@ -7,13 +7,36 @@ import ContactModal from './ContactModal';
 const Navbar = () => {
   const [open, setOpen] = useState(false);
   const [contactOpen, setContactOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+  const [cartBump, setCartBump] = useState(false);
   const { user, setShowUserLogin, navigate, setSearchQuery, searchQuery, getCartCount, logout } = useAppContext();
+  const cartCount = getCartCount();
+  const previousCartCount = useRef(cartCount);
 
   useEffect(()=> {
     if (searchQuery.length > 0) {
       navigate("/products");
     }
   }, [searchQuery, navigate]);
+
+  // Give the header a bit more depth once the page has scrolled past the top.
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 8);
+    onScroll();
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
+
+  // Bump the cart icon whenever an item is added.
+  useEffect(() => {
+    if (cartCount > previousCartCount.current) {
+      setCartBump(true);
+      const timer = setTimeout(() => setCartBump(false), 400);
+      previousCartCount.current = cartCount;
+      return () => clearTimeout(timer);
+    }
+    previousCartCount.current = cartCount;
+  }, [cartCount]);
 
   // Helper: link classes + active dot
   const linkClass = (isActive) =>
@@ -26,16 +49,16 @@ const Navbar = () => {
 
   return (
     <nav
-      className="
+      className={`
         relative z-50
         flex items-center justify-between
         px-4 sm:px-6 lg:px-10 xl:px-16 py-3 gap-4
         bg-[var(--paper)]/80 backdrop-blur
         border-b border-[var(--clay)]/70
-        shadow-sm
         text-[var(--ink)]
-        transition-all
-      "
+        transition-shadow duration-300
+        ${scrolled ? 'shadow-md' : 'shadow-sm'}
+      `}
     >
       <NavLink to='/' onClick={() => setOpen(false)} className="select-none">
         <span className="
@@ -87,7 +110,7 @@ const Navbar = () => {
         </div>
 
         {/* Cart */}
-        <div onClick={() => navigate('/cart')} className="relative cursor-pointer">
+        <div onClick={() => navigate('/cart')} className={`relative cursor-pointer ${cartBump ? 'animate-cart-bump' : ''}`}>
           <img src={assets.nav_cart_icon} alt="cart" className='w-6 opacity-80 hover:opacity-100 transition' />
           <button
             className="
@@ -95,7 +118,7 @@ const Navbar = () => {
               w-[18px] h-[18px] rounded-full grid place-items-center shadow
             "
           >
-            {getCartCount()}
+            {cartCount}
           </button>
         </div>
 
@@ -120,7 +143,7 @@ const Navbar = () => {
 
       {/* Mobile: cart + menu */}
       <div className='flex items-center gap-5 xl:hidden'>
-        <div onClick={() => navigate('/cart')} className="relative cursor-pointer">
+        <div onClick={() => navigate('/cart')} className={`relative cursor-pointer ${cartBump ? 'animate-cart-bump' : ''}`}>
           <img src={assets.nav_cart_icon} alt="cart" className='w-6 opacity-80 hover:opacity-100 transition' />
           <button
             className="
@@ -128,7 +151,7 @@ const Navbar = () => {
               w-[18px] h-[18px] rounded-full grid place-items-center shadow
             "
           >
-            {getCartCount()}
+            {cartCount}
           </button>
         </div>
 

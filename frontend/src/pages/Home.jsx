@@ -3,6 +3,7 @@ import React, { useEffect } from 'react'
 import { useLocation } from 'react-router-dom'
 import BannerCarousel from '../components/BannerCarousel'
 import NewsLetter from '../components/NewsLetter'
+import Reveal from '../components/Reveal'
 
 const Home = () => {
   const { hash } = useLocation();
@@ -15,7 +16,7 @@ const Home = () => {
   return (
     <div className="bg-paper text-ink">
       <BannerCarousel />
-      <NewsLetter />
+      <Reveal><NewsLetter /></Reveal>
     </div>
   )
 }

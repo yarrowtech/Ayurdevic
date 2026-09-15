@@ -8,6 +8,8 @@ import { useAppContext } from "../context/AppContext";
 import AdminCategories from "../components/AdminCategories";
 import DeletePromoModal from "../components/DeletePromoModal";
 import ConfirmDialog from "../components/ConfirmDialog";
+import { getReportSummary, downloadReport } from "../services/reportService";
+import CountUp from "../components/CountUp";
 import { assets } from "../assets/assets";
 
 const emptyProduct = { name: "", category: "", price: "", offerPrice: "", extraDiscountPercent: 0, taxRate: 0, bulkMinQuantity: 4, bulkDiscountPercent: 0, images: "", description: "", inStock: true, showInBanner: false, isBestSeller: false };
@@ -16,10 +18,18 @@ const emptyPromo = { title: "", subtitle: "", image: "", ctaText: "Shop now", ct
 const staffRoles = ["admin", "product_admin"];
 const inputStyle = "min-w-0 w-full rounded-lg border border-stone-300 bg-white px-3 py-2.5 outline-none focus:ring-2 focus:ring-green-700";
 const buttonStyle = "rounded-lg bg-green-800 px-5 py-2.5 text-white disabled:opacity-50 hover:bg-green-900";
+const toDateInput = date => date.toISOString().slice(0, 10);
+const revenueBarPalette = ["#166534", "#0d9488", "#65a30d", "#0f766e", "#4d7c0f", "#059669", "#15803d", "#0e7490"];
+const ordersBarPalette = ["#c2410c", "#a16207", "#9a3412", "#ca8a04", "#7c2d12", "#b45309", "#92400e", "#d97706"];
+const rangeFromDays = days => {
+  const to = new Date();
+  const from = new Date(to.getTime() - days * 24 * 60 * 60 * 1000);
+  return { from: toDateInput(from), to: toDateInput(to) };
+};
 const errorMessage = error => error?.response?.data?.message || "Unable to connect. Check that the backend is running.";
 
 export default function Admin() {
-  const { setUser, refreshProducts } = useAppContext();
+  const { setUser, refreshProducts, currency } = useAppContext();
   const [session, setSession] = useState(undefined);
   const [tab, setTab] = useState("Overview");
   const [email, setEmail] = useState("");
@@ -53,6 +63,14 @@ export default function Admin() {
   const [promoToDelete, setPromoToDelete] = useState(null);
   const [productToDelete, setProductToDelete] = useState(null);
   const [staffToRevoke, setStaffToRevoke] = useState(null);
+  const [report, setReport] = useState(null);
+  const [reportLoading, setReportLoading] = useState(false);
+  const [reportError, setReportError] = useState("");
+  const [downloadingReport, setDownloadingReport] = useState("");
+  const [reportFormat, setReportFormat] = useState("csv");
+  const [reportRange, setReportRange] = useState(rangeFromDays(29));
+  const [productSalesSearch, setProductSalesSearch] = useState("");
+  const [productSalesSort, setProductSalesSort] = useState("revenue");
   const isAdmin = session?.role === "admin";
   useEffect(() => {
     if (staffRoles.includes(session?.role) && tab === "Products") {
@@ -65,6 +83,30 @@ export default function Admin() {
   useEffect(() => {
     if (staffRoles.includes(session?.role) && tab === "Promotions") loadPromos();
   }, [session, tab, loadPromos]);
+  const loadReport = useCallback(range => {
+    setReportLoading(true);
+    setReportError("");
+    getReportSummary(range)
+      .then(data => setReport(data))
+      .catch(err => setReportError(errorMessage(err)))
+      .finally(() => setReportLoading(false));
+  }, []);
+  useEffect(() => {
+    // Only load once when the tab is first opened — date-range edits are
+    // applied explicitly via the "Apply" / preset buttons, not on every keystroke.
+    if (session?.role === "admin" && tab === "Reports") loadReport(reportRange);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [session, tab]);
+  const applyReportRange = range => {
+    setReportRange(range);
+    loadReport(range);
+  };
+  const handleDownloadReport = async type => {
+    setDownloadingReport(type);
+    try { await downloadReport(type, reportRange, reportFormat); }
+    catch (err) { toast.error(errorMessage(err)); }
+    finally { setDownloadingReport(""); }
+  };
   const imageUrls = form.images.split("\n").map(url => url.trim()).filter(Boolean);
 
   const uploadImages = async event => {
@@ -351,7 +393,7 @@ export default function Admin() {
       <aside className="bg-green-950 text-white p-4 sm:p-6 lg:w-60 lg:min-h-screen shrink-0">
         <Link to="/" className="text-2xl font-semibold">Ayurvedic<span className="block text-xs tracking-widest uppercase text-green-200 mt-2">{isAdmin ? "Project administration" : "Product administration"}</span></Link>
         <nav aria-label="Admin sections" className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-1 gap-2 mt-5 lg:mt-8">
-          {(isAdmin ? ["Overview", "Products", "Categories", "Promotions", "Users"] : ["Overview", "Products", "Categories", "Promotions"]).map(item => <button disabled={uploading || busy || categoryBusy} key={item} onClick={() => { setTab(item); setShowForm(false); }} aria-current={tab === item ? "page" : undefined} className={`text-left rounded-lg px-4 py-3 ${tab === item ? "bg-white/15" : "hover:bg-white/10"}`}>{item}</button>)}
+          {(isAdmin ? ["Overview", "Products", "Categories", "Promotions", "Reports", "Users"] : ["Overview", "Products", "Categories", "Promotions"]).map(item => <button disabled={uploading || busy || categoryBusy} key={item} onClick={() => { setTab(item); setShowForm(false); }} aria-current={tab === item ? "page" : undefined} className={`text-left rounded-lg px-4 py-3 ${tab === item ? "bg-white/15" : "hover:bg-white/10"}`}>{item}</button>)}
         </nav>
         <Link to="/" className="block mt-4 lg:mt-10 text-green-200 text-sm">← View storefront</Link>
       </aside>
@@ -413,7 +455,7 @@ export default function Admin() {
         {loading ? <p role="status">Loading store data…</p> : <>
           {tab === "Overview" && <>
             <div className="grid sm:grid-cols-3 gap-3 sm:gap-5">
-              {[["Total products", stats?.products], ["In-stock products", stats?.inStock], ["Registered accounts", stats?.users]].map(([label, value]) => <div key={label} className="bg-white border border-stone-200 rounded-xl p-6"><p className="text-stone-500 text-sm">{label}</p><p className="text-4xl font-semibold mt-3">{value ?? "—"}</p></div>)}
+              {[["Total products", stats?.products], ["In-stock products", stats?.inStock], ["Registered accounts", stats?.users]].map(([label, value]) => <div key={label} className="bg-white border border-stone-200 rounded-xl p-6"><p className="text-stone-500 text-sm">{label}</p><p className="text-4xl font-semibold mt-3">{value == null ? "—" : <CountUp value={value} />}</p></div>)}
             </div>
             <div className="mt-8 rounded-xl border border-stone-200 bg-white p-7"><h2 className="text-xl font-semibold">Manage your catalog</h2><p className="text-stone-500 mt-2 mb-5">Add products, update prices, and keep availability current.</p><button onClick={() => setTab("Products")} className={buttonStyle}>Manage products</button></div>
           </>}
@@ -486,8 +528,11 @@ export default function Admin() {
               </div>
               {!showPromoForm && <button disabled={busy} className={buttonStyle} onClick={() => { setEditingPromo(null); setPromoForm(emptyPromo); setShowPromoForm(true); }}>+ Add popup</button>}
             </div>
-            {showPromoForm && <form onSubmit={savePromo} className="bg-white rounded-xl border border-stone-200 p-4 sm:p-6 mb-6 space-y-4">
-              <h2 className="text-xl font-semibold">{editingPromo ? "Edit popup" : "New popup"}</h2>
+            {showPromoForm && (
+            <div role="presentation" className="fixed inset-0 z-[70] flex items-center justify-center bg-black/40 p-4" onClick={() => { if (!busy && !uploading) setShowPromoForm(false); }}>
+            <div role="dialog" aria-modal="true" aria-labelledby="promo-form-title" onClick={event => event.stopPropagation()} className="w-full max-w-2xl max-h-[90dvh] overflow-y-auto rounded-xl bg-white p-4 shadow-2xl sm:p-6">
+            <form onSubmit={savePromo} className="space-y-4">
+              <h2 id="promo-form-title" className="text-xl font-semibold">{editingPromo ? "Edit popup" : "New popup"}</h2>
               <div className="space-y-3 rounded-xl border border-stone-200 bg-stone-50 p-4">
                 <label className="block text-sm font-medium">Popup image (optional)
                   <input type="file" accept="image/jpeg,image/png,image/gif,image/webp" disabled={busy || uploading} onChange={uploadPromoImage} aria-describedby="promo-image-help" className="mt-2 block w-full rounded-lg border border-dashed border-green-700 bg-green-50 p-4 text-sm file:mr-4 file:rounded-md file:border-0 file:bg-green-800 file:px-4 file:py-2 file:text-white disabled:opacity-50" />
@@ -512,7 +557,10 @@ export default function Admin() {
               </div>
               <label className="flex gap-2 items-center"><input type="checkbox" checked={promoForm.active} onChange={e => setPromoForm({ ...promoForm, active: e.target.checked })} />Active</label>
               <div className="flex flex-wrap gap-3"><button disabled={busy || uploading} className={buttonStyle}>{busy ? "Saving…" : "Save popup"}</button><button type="button" disabled={busy || uploading} onClick={() => setShowPromoForm(false)} className="px-4 py-2">Cancel</button></div>
-            </form>}
+            </form>
+            </div>
+            </div>
+            )}
             <div className="overflow-x-auto bg-white rounded-xl border border-stone-200"><table className="admin-table w-full text-left text-sm"><thead className="bg-stone-100"><tr>{["Title", "Button", "Status", "Actions"].map(label => <th key={label} className="p-4">{label}</th>)}</tr></thead><tbody>
               {promos.map(promo => <tr key={promo._id} className="border-t border-stone-100">
                 <td data-label="Title" className="p-4"><p className="font-medium">{promo.title || "Image popup"}</p>{promo.subtitle && <p className="text-xs text-stone-500">{promo.subtitle}</p>}</td>
@@ -523,6 +571,137 @@ export default function Admin() {
               {!promos.length && <tr><td colSpan={4} className="p-10 text-center text-stone-500">No popups yet. Add one to promote a sale on the storefront.</td></tr>}
             </tbody></table></div>
           </>}
+          {tab === "Reports" && isAdmin && <>
+            <div className="mb-6 flex flex-wrap items-end gap-3 rounded-xl border border-stone-200 bg-white p-4">
+              <label className="text-sm">From<input type="date" value={reportRange.from} max={reportRange.to} onChange={e => setReportRange(current => ({ ...current, from: e.target.value }))} className={`${inputStyle} mt-1`} /></label>
+              <label className="text-sm">To<input type="date" value={reportRange.to} min={reportRange.from} max={toDateInput(new Date())} onChange={e => setReportRange(current => ({ ...current, to: e.target.value }))} className={`${inputStyle} mt-1`} /></label>
+              <button disabled={reportLoading} onClick={() => applyReportRange(reportRange)} className={buttonStyle}>{reportLoading ? "Loading…" : "Apply"}</button>
+              <div className="ml-auto flex flex-wrap gap-2">
+                {[["7d", 6], ["30d", 29], ["90d", 89], ["1y", 364]].map(([label, days]) => (
+                  <button key={label} disabled={reportLoading} onClick={() => applyReportRange(rangeFromDays(days))} className="rounded-lg border border-stone-300 px-3 py-2 text-sm text-stone-600 hover:bg-stone-50 disabled:opacity-50">Last {label}</button>
+                ))}
+              </div>
+            </div>
+            {reportError && <div role="alert" className="mb-5 p-4 rounded-lg bg-red-50 text-red-700">{reportError} <button onClick={() => loadReport(reportRange)} className="underline" disabled={reportLoading}>Retry</button></div>}
+            {reportLoading && !report ? <p role="status">Loading reports…</p> : report && <>
+              <p className="text-sm text-stone-500">Showing {new Date(report.range.from).toLocaleDateString()} – {new Date(report.range.to).toLocaleDateString()}</p>
+              <div className="mt-3 grid sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
+                {[
+                  ["Total revenue", report.sales.totalRevenue, n => `${currency}${n.toFixed(2)}`],
+                  ["Total orders", report.sales.totalOrders, null],
+                  ["Avg. order value", report.sales.averageOrderValue, n => `${currency}${n.toFixed(2)}`],
+                  ["Total products", report.products.totalProducts, null],
+                  ["Total users", report.users.totalUsers, null],
+                  ["New users (range)", report.users.newUsersInRange, null],
+                ].map(([label, value, formatter]) => <div key={label} className="bg-white border border-stone-200 rounded-xl p-4"><p className="text-stone-500 text-xs">{label}</p><p className="text-2xl font-semibold mt-2"><CountUp value={value} formatter={formatter || undefined} /></p></div>)}
+              </div>
+
+              <div className="mt-6 grid gap-4 lg:grid-cols-3">
+                <div className="lg:col-span-2 rounded-xl border border-stone-200 bg-white p-4 sm:p-6">
+                  <h2 className="text-lg font-semibold">Revenue by day</h2>
+                  {report.sales.daily.length ? (
+                    <div className="mt-6 flex h-40 items-end gap-1">
+                      {report.sales.daily.map((day, index) => {
+                        const max = Math.max(1, ...report.sales.daily.map(d => d.revenue));
+                        return <div key={day.date} className="group relative flex h-full flex-1 items-end"><div title={`${day.date}: ${currency}${day.revenue.toFixed(2)} · ${day.orders} order${day.orders === 1 ? "" : "s"}`} className="w-full rounded-t transition hover:brightness-110" style={{ height: `${Math.max(4, (day.revenue / max) * 100)}%`, backgroundColor: revenueBarPalette[index % revenueBarPalette.length] }} /></div>;
+                      })}
+                    </div>
+                  ) : <p className="mt-4 text-sm text-stone-500">No orders placed in this range.</p>}
+                </div>
+                <div className="rounded-xl border border-stone-200 bg-white p-4 sm:p-6">
+                  <h2 className="text-lg font-semibold">Orders by status</h2>
+                  <div className="mt-4 space-y-2">
+                    {Object.entries(report.sales.byStatus).length ? Object.entries(report.sales.byStatus).map(([status, count]) => (
+                      <div key={status} className="flex items-center justify-between text-sm"><span className="text-stone-600">{status}</span><span className="font-medium">{count}</span></div>
+                    )) : <p className="text-sm text-stone-500">No orders yet.</p>}
+                  </div>
+                  <h2 className="mt-6 text-lg font-semibold">Payment methods</h2>
+                  <div className="mt-4 space-y-2">
+                    {Object.entries(report.sales.byPaymentMethod).length ? Object.entries(report.sales.byPaymentMethod).map(([method, count]) => (
+                      <div key={method} className="flex items-center justify-between text-sm"><span className="text-stone-600">{method === "COD" ? "Cash on delivery" : method}</span><span className="font-medium">{count}</span></div>
+                    )) : <p className="text-sm text-stone-500">No orders yet.</p>}
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-6 grid gap-4 lg:grid-cols-2">
+                <div className="rounded-xl border border-stone-200 bg-white p-4 sm:p-6">
+                  <h2 className="text-lg font-semibold">Orders per day</h2>
+                  {report.sales.daily.length ? (
+                    <div className="mt-6 flex h-32 items-end gap-1">
+                      {report.sales.daily.map((day, index) => {
+                        const maxOrders = Math.max(1, ...report.sales.daily.map(d => d.orders));
+                        return <div key={day.date} className="group relative flex h-full flex-1 items-end"><div title={`${day.date}: ${day.orders} order${day.orders === 1 ? "" : "s"}`} className="w-full rounded-t transition hover:brightness-110" style={{ height: `${Math.max(4, (day.orders / maxOrders) * 100)}%`, backgroundColor: ordersBarPalette[index % ordersBarPalette.length] }} /></div>;
+                      })}
+                    </div>
+                  ) : <p className="mt-4 text-sm text-stone-500">No orders placed in this range.</p>}
+                </div>
+                <div className="rounded-xl border border-stone-200 bg-white p-4 sm:p-6">
+                  <h2 className="text-lg font-semibold">Revenue by category</h2>
+                  <div className="mt-4 space-y-3">
+                    {report.sales.byCategory.length ? report.sales.byCategory.map(row => {
+                      const maxCategory = Math.max(1, ...report.sales.byCategory.map(c => c.revenue));
+                      return (
+                        <div key={row.category}>
+                          <div className="flex justify-between text-sm"><span className="capitalize text-stone-700">{row.category}</span><span className="font-medium">{currency}{row.revenue.toFixed(2)}</span></div>
+                          <div className="mt-1 h-2 rounded-full bg-stone-100"><div className="h-2 rounded-full bg-green-700" style={{ width: `${(row.revenue / maxCategory) * 100}%` }} /></div>
+                        </div>
+                      );
+                    }) : <p className="text-sm text-stone-500">No sales in this range.</p>}
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-6 rounded-xl border border-stone-200 bg-white p-4 sm:p-6">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <h2 className="text-lg font-semibold">Product-wise sales</h2>
+                  <div className="flex flex-wrap gap-2">
+                    <input aria-label="Search products" placeholder="Search products…" value={productSalesSearch} onChange={e => setProductSalesSearch(e.target.value)} className={`${inputStyle} max-w-xs`} />
+                    <select aria-label="Sort by" value={productSalesSort} onChange={e => setProductSalesSort(e.target.value)} className={inputStyle}>
+                      <option value="revenue">Sort by revenue</option>
+                      <option value="quantitySold">Sort by units sold</option>
+                    </select>
+                  </div>
+                </div>
+                <div className="mt-4 overflow-x-auto">
+                  <table className="admin-table w-full text-left text-sm"><thead className="bg-stone-100"><tr>{["Product", "Units sold", "Revenue", "% of revenue"].map(label => <th key={label} className="p-3">{label}</th>)}</tr></thead><tbody>
+                    {report.products.productSales
+                      .filter(item => item.name.toLowerCase().includes(productSalesSearch.toLowerCase()))
+                      .slice().sort((a, b) => b[productSalesSort] - a[productSalesSort])
+                      .map(item => <tr key={item.productId} className="border-t border-stone-100">
+                        <td className="p-3"><div className="flex items-center gap-3">{item.image ? <img src={item.image} alt="" className="h-10 w-10 rounded object-cover" /> : <span className="flex h-10 w-10 items-center justify-center rounded bg-green-50 text-green-800">{item.name[0]}</span>}<span>{item.name}</span></div></td>
+                        <td className="p-3">{item.quantitySold}</td>
+                        <td className="p-3">{currency}{item.revenue.toFixed(2)}</td>
+                        <td className="p-3">{report.sales.totalRevenue ? ((item.revenue / report.sales.totalRevenue) * 100).toFixed(1) : "0.0"}%</td>
+                      </tr>)}
+                    {!report.products.productSales.length && <tr><td colSpan={4} className="p-8 text-center text-stone-500">No sales in this range.</td></tr>}
+                    {report.products.productSales.length > 0 && !report.products.productSales.some(item => item.name.toLowerCase().includes(productSalesSearch.toLowerCase())) && <tr><td colSpan={4} className="p-8 text-center text-stone-500">No matching products.</td></tr>}
+                  </tbody></table>
+                </div>
+              </div>
+
+              <div className="mt-6 rounded-xl border border-stone-200 bg-white p-4 sm:p-6">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div>
+                    <h2 className="text-lg font-semibold">Generate a report</h2>
+                    <p className="mt-1 text-sm text-stone-500">Download a snapshot of the selected date range.</p>
+                  </div>
+                  <div className="flex rounded-lg border border-stone-300 p-1" role="group" aria-label="File format">
+                    {[["csv", "CSV"], ["xlsx", "Excel"]].map(([value, label]) => (
+                      <button key={value} type="button" onClick={() => setReportFormat(value)} aria-pressed={reportFormat === value} className={`rounded-md px-4 py-1.5 text-sm font-medium transition ${reportFormat === value ? "bg-green-800 text-white" : "text-stone-600 hover:bg-stone-50"}`}>{label}</button>
+                    ))}
+                  </div>
+                </div>
+                <div className="mt-4 flex flex-wrap gap-3">
+                  {[["orders", "Orders"], ["product-sales", "Product sales"], ["category-sales", "Category sales"], ["products", "Product catalog"], ["users", "Users"]].map(([type, label]) => (
+                    <button key={type} disabled={downloadingReport === type} onClick={() => handleDownloadReport(type)} className="rounded-lg border border-stone-300 px-5 py-2.5 text-sm font-medium text-stone-700 hover:bg-stone-50 disabled:opacity-50">
+                      {downloadingReport === type ? "Preparing…" : `Download ${label} (${reportFormat === "xlsx" ? "Excel" : "CSV"})`}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </>}
+          </>}
           {tab === "Users" && isAdmin && <>
             <div className="mb-6 rounded-xl border border-stone-200 bg-white p-4 sm:p-6">
               <div className="flex flex-wrap items-center justify-between gap-3">
@@ -532,7 +711,11 @@ export default function Admin() {
                 </div>
                 {!showStaffForm && <button disabled={busy} className={buttonStyle} onClick={() => { setStaffForm(emptyStaff); setShowStaffForm(true); }}>+ Add product admin</button>}
               </div>
-              {showStaffForm && <form onSubmit={createStaff} className="mt-4 grid gap-4 sm:grid-cols-3">
+              {showStaffForm && (
+              <div role="presentation" className="fixed inset-0 z-[70] flex items-center justify-center bg-black/40 p-4" onClick={() => { if (!busy) setShowStaffForm(false); }}>
+              <div role="dialog" aria-modal="true" aria-labelledby="staff-form-title" onClick={event => event.stopPropagation()} className="w-full max-w-lg max-h-[90dvh] overflow-y-auto rounded-xl bg-white p-4 shadow-2xl sm:p-6">
+              <form onSubmit={createStaff} className="space-y-4">
+                <h2 id="staff-form-title" className="text-xl font-semibold">Add product admin</h2>
                 <label className="block text-sm">Name<input required maxLength={100} value={staffForm.name} onChange={e => setStaffForm({ ...staffForm, name: e.target.value })} className={inputStyle} /></label>
                 <label className="block text-sm">Email<input required type="email" maxLength={254} value={staffForm.email} onChange={e => setStaffForm({ ...staffForm, email: e.target.value })} className={inputStyle} /></label>
                 <label className="block text-sm">Password
@@ -541,8 +724,11 @@ export default function Admin() {
                     <button type="button" aria-label={showStaffPassword ? "Hide password" : "Show password"} onClick={() => setShowStaffPassword(visible => !visible)} className="absolute inset-y-0 right-0 rounded-r-lg px-3 text-sm font-medium text-green-800 hover:text-green-950">{showStaffPassword ? "Hide" : "Show"}</button>
                   </div>
                 </label>
-                <div className="flex gap-3 sm:col-span-3"><button disabled={busy} className={buttonStyle}>{busy ? "Creating…" : "Create account"}</button><button type="button" disabled={busy} onClick={() => setShowStaffForm(false)} className="px-4 py-2">Cancel</button></div>
-              </form>}
+                <div className="flex gap-3"><button disabled={busy} className={buttonStyle}>{busy ? "Creating…" : "Create account"}</button><button type="button" disabled={busy} onClick={() => setShowStaffForm(false)} className="px-4 py-2">Cancel</button></div>
+              </form>
+              </div>
+              </div>
+              )}
             </div>
             <p className="text-sm text-stone-500 mb-4">Latest 100 registered accounts</p>
             <div className="overflow-x-auto bg-white border border-stone-200 rounded-xl"><table className="admin-table w-full text-left text-sm"><thead className="bg-stone-100"><tr>{["Name", "Email", "Role", "Joined", "Actions"].map(label => <th className="p-4" key={label}>{label}</th>)}</tr></thead><tbody>{users.map(account => <tr key={account._id} className="border-t border-stone-100"><td data-label="Name" className="p-4">{account.name}</td><td data-label="Email" className="p-4">{account.email}</td><td data-label="Role" className="p-4">{account.role === "product_admin" ? "Product admin" : (account.role || "user")}</td><td data-label="Joined" className="p-4">{new Date(account.createdAt).toLocaleDateString()}</td><td data-label="Actions" className="p-4">{account.role === "product_admin" && <button disabled={busy} onClick={() => { setViewingStaff(account); setResetPassword(""); setShowResetPassword(false); }} className="text-green-800 disabled:opacity-50">Account details</button>}</td></tr>)}</tbody></table></div>

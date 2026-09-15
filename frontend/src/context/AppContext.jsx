@@ -14,6 +14,7 @@ export const AppContextProvider = ({ children }) => {
     const [isSeller, setIsSeller] = useState(false);
     const [showUserLogin, setShowUserLogin] = useState(false);
     const [products, setProducts] = useState([]);
+    const [productsLoading, setProductsLoading] = useState(true);
     const [categories, setCategories] = useState([]);
     const refreshCategories = useCallback(async () => {
         try { setCategories((await api.get('/api/categories')).data.categories); }
@@ -32,6 +33,8 @@ export const AppContextProvider = ({ children }) => {
             ));
         } catch {
             toast.error('Unable to load products. Check the backend connection.');
+        } finally {
+            setProductsLoading(false);
         }
     }, []);
 
@@ -130,7 +133,7 @@ export const AppContextProvider = ({ children }) => {
         return () => document.removeEventListener('visibilitychange', refreshVisibleCatalog);
     }, [refreshProducts]);
 
-    const value = { navigate, user, setUser, logout, isSeller, setIsSeller, showUserLogin, setShowUserLogin, products, currency, addToCart, updateCartItem, removeFromCart, clearCart, cartItems, searchQuery, setSearchQuery, getCartAmount, getCartCount, refreshProducts };
+    const value = { navigate, user, setUser, logout, isSeller, setIsSeller, showUserLogin, setShowUserLogin, products, productsLoading, currency, addToCart, updateCartItem, removeFromCart, clearCart, cartItems, searchQuery, setSearchQuery, getCartAmount, getCartCount, refreshProducts };
     return <AppContext.Provider value={{ ...value, categories, refreshCategories }}>
         {children}
     </AppContext.Provider>;
