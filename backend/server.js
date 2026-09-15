@@ -2,7 +2,9 @@ import "dotenv/config";
 import express from "express";
 import cors from "cors";
 import cookieParser from "cookie-parser";
+import pinoHttp from "pino-http";
 import connectDB from "./configs/db.js";
+import logger from "./configs/logger.js";
 import userRouter from "./routes/user.Route.js";
 import adminRouter from "./routes/admin.Route.js";
 import trackRouter from "./routes/track.Route.js";
@@ -16,6 +18,7 @@ const port = process.env.PORT || 5000;
 
 await connectDB();
 
+app.use(pinoHttp({ logger, autoLogging: { ignore: req => req.url === "/" } }));
 app.use(express.json());
 app.use(cookieParser());
 app.use(
@@ -51,5 +54,5 @@ app.get("/api/promos", async (req, res) => {
 });
 
 app.listen(port, () => {
-  console.log(`Server is running on http://localhost:${port}`);
+  logger.info(`Server is running on http://localhost:${port}`);
 });

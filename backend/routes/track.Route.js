@@ -27,7 +27,7 @@ router.post("/", async (req, res) => {
     }
     await Visit.create(doc);
     res.status(201).json({ success: true });
-  } catch (error) { console.error(error); res.status(500).json({ success: false, message: "Unable to record event." }); }
+  } catch (error) { req.log.error({ err: error }, "Unable to record tracking event"); res.status(500).json({ success: false, message: "Unable to record event." }); }
 });
 
 export default router;

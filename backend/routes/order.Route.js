@@ -51,7 +51,7 @@ router.post("/", async (req, res) => {
       subtotal, tax, taxIncluded: true, shippingFee, total,
     });
     res.status(201).json({ success: true, order });
-  } catch (error) { console.error(error); res.status(500).json({ success: false, message: "Unable to place your order. Please try again." }); }
+  } catch (error) { req.log.error({ err: error, userId: req.userId }, "Order placement failed"); res.status(500).json({ success: false, message: "Unable to place your order. Please try again." }); }
 });
 
 export default router;

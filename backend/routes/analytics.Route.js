@@ -63,7 +63,7 @@ router.get("/summary", async (req, res) => {
       },
       daily, topProducts, topPages, recent,
     });
-  } catch (error) { console.error(error); res.status(500).json({ success: false, message: "Unable to load analytics." }); }
+  } catch (error) { req.log.error({ err: error }, "Unable to load analytics"); res.status(500).json({ success: false, message: "Unable to load analytics." }); }
 });
 
 export default router;

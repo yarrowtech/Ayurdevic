@@ -2,6 +2,7 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import User from "../model/User.modal.js";
 import Visit from "../model/Visit.js";
+import logger from "../configs/logger.js";
 
 export const createToken = (userId) => {
   return jwt.sign({ id: userId }, process.env.JWT_SECRET, { expiresIn: "7d" });
@@ -19,7 +20,7 @@ export const setTokenCookie = (res, token) => {
 // Records a session start for admin analytics. Never allowed to break auth.
 export const logLoginEvent = async user => {
   try { await Visit.create({ type: "login", user: user._id, userName: user.name }); }
-  catch (error) { console.error("Unable to record login event:", error); }
+  catch (error) { logger.error({ err: error, userId: user._id }, "Unable to record login event"); }
 };
 
 // POST /api/user/register
@@ -50,7 +51,7 @@ export const register = async (req, res) => {
     });
   } catch (error) {
     if (error.code === 11000) return res.status(409).json({ success: false, message: "An account with this email already exists. Please sign in." });
-    console.error(error);
+    req.log.error({ err: error }, "Registration failed");
     return res.status(500).json({ success: false, message: "Server error" });
   }
 };
@@ -86,7 +87,7 @@ export const login = async (req, res) => {
       user: { _id: user._id, email: user.email, name: user.name, role: user.role },
     });
   } catch (error) {
-    console.error(error);
+    req.log.error({ err: error }, "Login failed");
     return res.status(500).json({ success: false, message: "Server error" });
   }
 };
@@ -107,7 +108,7 @@ export const isAuth = async (req, res) => {
     }
     return res.json({ success: true, user });
   } catch (error) {
-    console.error(error);
+    req.log.error({ err: error }, "Session check failed");
     return res.status(500).json({ success: false, message: "Server error" });
   }
 };
@@ -122,7 +123,7 @@ export const logout = async (req, res) => {
     });
     return res.json({ success: true, message: "Logged out" });
   } catch (error) {
-    console.error(error);
+    req.log.error({ err: error }, "Logout failed");
     return res.status(500).json({ success: false, message: "Server error" });
   }
 };

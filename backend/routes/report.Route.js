@@ -103,7 +103,7 @@ router.get("/summary", async (req, res) => {
       },
       users: { totalUsers, newUsersInRange, byRole },
     });
-  } catch (error) { console.error(error); res.status(500).json({ success: false, message: "Unable to load reports." }); }
+  } catch (error) { req.log.error({ err: error }, "Unable to load reports"); res.status(500).json({ success: false, message: "Unable to load reports." }); }
 });
 
 // GET /api/admin/reports/export?type=orders|products|users|category-sales|product-sales
@@ -186,7 +186,7 @@ router.get("/export", async (req, res) => {
 
     if (format === "xlsx") await sendXlsx(res, `${name}.xlsx`, columns, rows);
     else sendCsv(res, `${name}.csv`, toCsv(rows, columns));
-  } catch (error) { console.error(error); res.status(500).json({ success: false, message: "Unable to generate this report." }); }
+  } catch (error) { req.log.error({ err: error, type: req.query.type }, "Unable to generate report export"); res.status(500).json({ success: false, message: "Unable to generate this report." }); }
 });
 
 export default router;

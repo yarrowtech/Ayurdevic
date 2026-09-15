@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import logger from "./logger.js";
 
 const connectDB = async () => {
   try {
@@ -6,11 +7,11 @@ const connectDB = async () => {
       throw new Error("MONGO_URI is missing. Set it in backend/.env.");
     }
     mongoose.connection.on("connected", () => {
-      console.log("Database connected");
+      logger.info("Database connected");
     });
     await mongoose.connect(process.env.MONGO_URI, { dbName: "ayurvedic" });
   } catch (error) {
-    console.error("Database connection failed:", error.message);
+    logger.error({ err: error }, "Database connection failed");
     process.exit(1);
   }
 };
