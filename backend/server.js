@@ -5,6 +5,7 @@ import cookieParser from "cookie-parser";
 import connectDB from "./configs/db.js";
 import userRouter from "./routes/user.Route.js";
 import adminRouter from "./routes/admin.Route.js";
+import trackRouter from "./routes/track.Route.js";
 import Product from "./model/Product.js";
 import Category from "./model/Category.js";
 import Promo from "./model/Promo.js";
@@ -30,6 +31,7 @@ app.get("/", (req, res) => {
 
 app.use("/api/user", userRouter);
 app.use("/api/admin", adminRouter);
+app.use("/api/track", trackRouter);
 app.use("/uploads", express.static(uploadDirectory, {
   dotfiles: "deny",
   setHeaders: res => res.setHeader("X-Content-Type-Options", "nosniff"),

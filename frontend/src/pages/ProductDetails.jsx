@@ -4,6 +4,7 @@ import { useAppContext } from "../context/AppContext";
 import { Link, useParams } from "react-router-dom";
 import { assets } from "../assets/assets";
 import ProductCard from "../components/ProductCard";
+import { trackProductView } from "../services/analyticsService";
 
 
 const ProductDetails = () => {
@@ -31,6 +32,10 @@ const ProductDetails = () => {
 
     useEffect(() => {
         setThumbnail(product?.image[0] ? product.image[0] : null);
+    }, [product]);
+
+    useEffect(() => {
+        if (product?._id) trackProductView(product._id, `/products/${product.category?.toLowerCase()}/${product._id}`);
     }, [product]);
 
     return (

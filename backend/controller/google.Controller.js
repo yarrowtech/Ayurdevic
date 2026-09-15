@@ -1,6 +1,6 @@
 import { OAuth2Client } from "google-auth-library";
 import User from "../model/User.modal.js";
-import { createToken, setTokenCookie } from "./user.Controller.js";
+import { createToken, setTokenCookie, logLoginEvent } from "./user.Controller.js";
 
 const client = new OAuth2Client();
 export const googleConfig = (req, res) => {
@@ -43,6 +43,7 @@ export const googleLogin = async (req, res) => {
       }
     }
     setTokenCookie(res, createToken(user._id));
+    await logLoginEvent(user);
     return res.json({ success: true, user: { _id: user._id, name: user.name, email: user.email, role: user.role } });
   } catch (error) {
     if (error.code === 11000) return res.status(409).json({ success: false, message: "This account was just created. Please try signing in again." });

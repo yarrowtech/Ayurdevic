@@ -6,6 +6,7 @@ import api from "../services/api";
 import { checkAuth, loginUser, logoutUser } from "../services/userService";
 import { useAppContext } from "../context/AppContext";
 import AdminCategories from "../components/AdminCategories";
+import AdminAnalytics from "../components/AdminAnalytics";
 import DeletePromoModal from "../components/DeletePromoModal";
 import ConfirmDialog from "../components/ConfirmDialog";
 import { getReportSummary, downloadReport } from "../services/reportService";
@@ -393,7 +394,7 @@ export default function Admin() {
       <aside className="bg-green-950 text-white p-4 sm:p-6 lg:w-60 lg:min-h-screen shrink-0">
         <Link to="/" className="text-2xl font-semibold">Ayurvedic<span className="block text-xs tracking-widest uppercase text-green-200 mt-2">{isAdmin ? "Project administration" : "Product administration"}</span></Link>
         <nav aria-label="Admin sections" className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-1 gap-2 mt-5 lg:mt-8">
-          {(isAdmin ? ["Overview", "Products", "Categories", "Promotions", "Reports", "Users"] : ["Overview", "Products", "Categories", "Promotions"]).map(item => <button disabled={uploading || busy || categoryBusy} key={item} onClick={() => { setTab(item); setShowForm(false); }} aria-current={tab === item ? "page" : undefined} className={`text-left rounded-lg px-4 py-3 ${tab === item ? "bg-white/15" : "hover:bg-white/10"}`}>{item}</button>)}
+          {(isAdmin ? ["Overview", "Products", "Categories", "Promotions", "Reports", "Analytics", "Users"] : ["Overview", "Products", "Categories", "Promotions"]).map(item => <button disabled={uploading || busy || categoryBusy} key={item} onClick={() => { setTab(item); setShowForm(false); }} aria-current={tab === item ? "page" : undefined} className={`text-left rounded-lg px-4 py-3 ${tab === item ? "bg-white/15" : "hover:bg-white/10"}`}>{item}</button>)}
         </nav>
         <Link to="/" className="block mt-4 lg:mt-10 text-green-200 text-sm">← View storefront</Link>
       </aside>
@@ -702,6 +703,7 @@ export default function Admin() {
               </div>
             </>}
           </>}
+          {tab === "Analytics" && isAdmin && <AdminAnalytics />}
           {tab === "Users" && isAdmin && <>
             <div className="mb-6 rounded-xl border border-stone-200 bg-white p-4 sm:p-6">
               <div className="flex flex-wrap items-center justify-between gap-3">

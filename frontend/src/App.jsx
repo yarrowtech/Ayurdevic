@@ -27,7 +27,7 @@
 // export default App
 
 // src/App.jsx
-import React from 'react'
+import React, { useEffect } from 'react'
 import Navbar from './components/Navbar'
 import { Route, Routes, useLocation } from 'react-router-dom'
 import Home from './pages/Home'
@@ -48,13 +48,19 @@ import Returns from './pages/Returns';
 import PaymentMethods from './pages/PaymentMethods';
 import Faq from './pages/Faq';
 import NotFound from './pages/NotFound';
+import { trackPageView } from './services/analyticsService';
 
 const App = () => {
   const { pathname } = useLocation();
   const isSellerPath = pathname.includes("seller");
   const isAdminPath = /^\/admin(?:\/|$)/.test(pathname);
   const { showUserLogin } = useAppContext();
- 
+
+  // Track storefront page views for admin analytics (skip admin/seller pages).
+  useEffect(() => {
+    if (!isSellerPath && !isAdminPath) trackPageView(pathname);
+  }, [pathname, isSellerPath, isAdminPath]);
+
   return (
     <div className="font-body bg-paper text-ink min-h-screen flex flex-col">
       {!isSellerPath && !isAdminPath && (

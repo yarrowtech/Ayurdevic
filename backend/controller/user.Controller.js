@@ -1,6 +1,7 @@
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import User from "../model/User.modal.js";
+import Visit from "../model/Visit.js";
 
 export const createToken = (userId) => {
   return jwt.sign({ id: userId }, process.env.JWT_SECRET, { expiresIn: "7d" });
@@ -13,6 +14,12 @@ export const setTokenCookie = (res, token) => {
     sameSite: process.env.NODE_ENV === "production" ? "none" : "strict",
     maxAge: 7 * 24 * 60 * 60 * 1000,
   });
+};
+
+// Records a session start for admin analytics. Never allowed to break auth.
+export const logLoginEvent = async user => {
+  try { await Visit.create({ type: "login", user: user._id, userName: user.name }); }
+  catch (error) { console.error("Unable to record login event:", error); }
 };
 
 // POST /api/user/register
@@ -35,6 +42,7 @@ export const register = async (req, res) => {
 
     const token = createToken(user._id);
     setTokenCookie(res, token);
+    await logLoginEvent(user);
 
     return res.status(201).json({
       success: true,
@@ -71,6 +79,7 @@ export const login = async (req, res) => {
 
     const token = createToken(user._id);
     setTokenCookie(res, token);
+    await logLoginEvent(user);
 
     return res.json({
       success: true,

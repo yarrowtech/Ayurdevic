@@ -3,6 +3,7 @@ import ExcelJS from "exceljs";
 import Order from "../model/Order.js";
 import Product from "../model/Product.js";
 import User from "../model/User.modal.js";
+import { parseRange } from "../configs/dateRange.js";
 
 const router = express.Router();
 
@@ -36,18 +37,6 @@ const sendXlsx = async (res, filename, columns, rows) => {
   res.set("Content-Disposition", `attachment; filename="${filename}"`);
   await workbook.xlsx.write(res);
   res.end();
-};
-
-// Resolves the ?from=&to= query into a valid [from, to] Date range,
-// defaulting to the last 30 days when either is missing or invalid.
-const parseRange = query => {
-  const now = new Date();
-  const defaultFrom = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-  const from = query.from ? new Date(query.from) : defaultFrom;
-  const to = query.to ? new Date(query.to) : now;
-  if (isNaN(from) || isNaN(to) || from > to) return { from: defaultFrom, to: now };
-  to.setHours(23, 59, 59, 999); // include the entire "to" day
-  return { from, to };
 };
 
 // GET /api/admin/reports/summary?from=&to= — sales, product and user analytics

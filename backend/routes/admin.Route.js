@@ -12,6 +12,7 @@ import { imageUpload } from "../configs/imageUpload.js";
 import categoryRouter from "./category.Route.js";
 import promoRouter from "./promo.Route.js";
 import reportRouter from "./report.Route.js";
+import analyticsRouter from "./analytics.Route.js";
 
 const router = express.Router();
 // Any signed-in admin or product admin may reach this router; individual
@@ -39,6 +40,7 @@ router.get("/overview", async (req, res) => {
 
 // Full admin only: account management and analytics/reports.
 router.use("/reports", authAdmin, reportRouter);
+router.use("/analytics", authAdmin, analyticsRouter);
 router.get("/users", authAdmin, async (req, res) => {
   try {
     const users = await User.find().select("name email role createdAt").sort({ createdAt: -1 }).limit(100);
