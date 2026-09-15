@@ -6,9 +6,11 @@ import authAdmin from "../middleware/authAdmin.js";
 import authStaff from "../middleware/authStaff.js";
 import User from "../model/User.modal.js";
 import Product from "../model/Product.js";
+import Order from "../model/Order.js";
 import { validateProduct } from "../configs/validateProduct.js";
 import { validateStaffAccount, validateStaffPassword } from "../configs/validateStaff.js";
 import { imageUpload } from "../configs/imageUpload.js";
+import { parseRange } from "../configs/dateRange.js";
 import categoryRouter from "./category.Route.js";
 import promoRouter from "./promo.Route.js";
 import reportRouter from "./report.Route.js";
@@ -29,12 +31,28 @@ router.use((req, res, next) => {
 router.post("/images", ...imageUpload);
 router.use("/categories", categoryRouter);
 router.use("/promos", promoRouter);
+// GET /api/admin/overview?from=&to= — headline stats. from/to scope the
+// order-based figures (totalOrders/totalSales); they default to the last 30
+// days so this endpoint keeps working for callers that omit them.
 router.get("/overview", async (req, res) => {
   try {
-    const [users, products, inStock] = await Promise.all([
+    const { from, to } = parseRange(req.query);
+    const [users, products, inStock, [orderTotals]] = await Promise.all([
       User.countDocuments(), Product.countDocuments(), Product.countDocuments({ inStock: true }),
+      Order.aggregate([
+        { $match: { createdAt: { $gte: from, $lte: to } } },
+        { $group: { _id: null, totalOrders: { $sum: 1 }, totalSales: { $sum: "$total" } } },
+      ]),
     ]);
-    res.json({ success: true, stats: { users, products, inStock } });
+    res.json({
+      success: true,
+      stats: {
+        users, products, inStock,
+        totalOrders: orderTotals?.totalOrders || 0,
+        totalSales: orderTotals?.totalSales || 0,
+      },
+      range: { from: from.toISOString(), to: to.toISOString() },
+    });
   } catch { res.status(500).json({ success: false, message: "Unable to load dashboard" }); }
 });
 

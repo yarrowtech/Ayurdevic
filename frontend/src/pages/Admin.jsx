@@ -72,6 +72,8 @@ export default function Admin() {
   const [reportRange, setReportRange] = useState(rangeFromDays(29));
   const [productSalesSearch, setProductSalesSearch] = useState("");
   const [productSalesSort, setProductSalesSort] = useState("revenue");
+  const [overviewRange, setOverviewRange] = useState(rangeFromDays(29));
+  const [overviewLoading, setOverviewLoading] = useState(false);
   const isAdmin = session?.role === "admin";
   useEffect(() => {
     if (staffRoles.includes(session?.role) && tab === "Products") {
@@ -101,6 +103,17 @@ export default function Admin() {
   const applyReportRange = range => {
     setReportRange(range);
     loadReport(range);
+  };
+  const loadOverview = useCallback(range => {
+    setOverviewLoading(true);
+    api.get("/api/admin/overview", { params: range })
+      .then(({ data }) => setStats(data.stats))
+      .catch(err => toast.error(errorMessage(err)))
+      .finally(() => setOverviewLoading(false));
+  }, []);
+  const applyOverviewRange = range => {
+    setOverviewRange(range);
+    loadOverview(range);
   };
   const handleDownloadReport = async type => {
     setDownloadingReport(type);
@@ -455,8 +468,22 @@ export default function Admin() {
         {error && <div role="alert" className="mb-5 p-4 rounded-lg bg-red-50 text-red-700">{error} <button onClick={load} className="underline" disabled={loading}>Retry</button></div>}
         {loading ? <p role="status">Loading store data…</p> : <>
           {tab === "Overview" && <>
+            <div className="mb-6 flex flex-wrap items-end gap-3 rounded-xl border border-stone-200 bg-white p-4">
+              <label className="text-sm">From<input type="date" value={overviewRange.from} max={overviewRange.to} onChange={e => setOverviewRange(current => ({ ...current, from: e.target.value }))} className={`${inputStyle} mt-1`} /></label>
+              <label className="text-sm">To<input type="date" value={overviewRange.to} min={overviewRange.from} max={toDateInput(new Date())} onChange={e => setOverviewRange(current => ({ ...current, to: e.target.value }))} className={`${inputStyle} mt-1`} /></label>
+              <button disabled={overviewLoading} onClick={() => applyOverviewRange(overviewRange)} className={buttonStyle}>{overviewLoading ? "Loading…" : "Apply"}</button>
+              <div className="ml-auto flex flex-wrap gap-2">
+                {[["7d", 6], ["30d", 29], ["90d", 89], ["1y", 364]].map(([label, days]) => (
+                  <button key={label} disabled={overviewLoading} onClick={() => applyOverviewRange(rangeFromDays(days))} className="rounded-lg border border-stone-300 px-3 py-2 text-sm text-stone-600 hover:bg-stone-50 disabled:opacity-50">Last {label}</button>
+                ))}
+              </div>
+            </div>
+            <p className="mb-3 text-sm text-stone-500">Orders and sales below are scoped to the selected range; catalog and account totals are all-time.</p>
             <div className="grid sm:grid-cols-3 gap-3 sm:gap-5">
               {[["Total products", stats?.products], ["In-stock products", stats?.inStock], ["Registered accounts", stats?.users]].map(([label, value]) => <div key={label} className="bg-white border border-stone-200 rounded-xl p-6"><p className="text-stone-500 text-sm">{label}</p><p className="text-4xl font-semibold mt-3">{value == null ? "—" : <CountUp value={value} />}</p></div>)}
+            </div>
+            <div className="mt-3 grid sm:grid-cols-2 gap-3 sm:gap-5">
+              {[["Total orders", stats?.totalOrders, null], ["Total sales", stats?.totalSales, v => `${currency}${Math.round(v).toLocaleString("en-IN")}`]].map(([label, value, formatter]) => <div key={label} className="bg-white border border-stone-200 rounded-xl p-6"><p className="text-stone-500 text-sm">{label}</p><p className="text-4xl font-semibold mt-3">{value == null ? "—" : <CountUp value={value} formatter={formatter} />}</p></div>)}
             </div>
             <div className="mt-8 rounded-xl border border-stone-200 bg-white p-7"><h2 className="text-xl font-semibold">Manage your catalog</h2><p className="text-stone-500 mt-2 mb-5">Add products, update prices, and keep availability current.</p><button onClick={() => setTab("Products")} className={buttonStyle}>Manage products</button></div>
           </>}
