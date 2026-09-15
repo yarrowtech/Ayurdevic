@@ -7,6 +7,7 @@ import { checkAuth, loginUser, logoutUser } from "../services/userService";
 import { useAppContext } from "../context/AppContext";
 import AdminCategories from "../components/AdminCategories";
 import DeletePromoModal from "../components/DeletePromoModal";
+import ConfirmDialog from "../components/ConfirmDialog";
 import { assets } from "../assets/assets";
 
 const emptyProduct = { name: "", category: "", price: "", offerPrice: "", extraDiscountPercent: 0, taxRate: 0, bulkMinQuantity: 4, bulkDiscountPercent: 0, images: "", description: "", inStock: true, showInBanner: false, isBestSeller: false };
@@ -50,6 +51,8 @@ export default function Admin() {
   const [showPromoForm, setShowPromoForm] = useState(false);
   const [editingPromo, setEditingPromo] = useState(null);
   const [promoToDelete, setPromoToDelete] = useState(null);
+  const [productToDelete, setProductToDelete] = useState(null);
+  const [staffToRevoke, setStaffToRevoke] = useState(null);
   const isAdmin = session?.role === "admin";
   useEffect(() => {
     if (staffRoles.includes(session?.role) && tab === "Products") {
@@ -202,12 +205,13 @@ export default function Admin() {
     } catch (err) { toast.error(errorMessage(err)); }
     finally { setBusy(false); }
   };
-  const revokeStaff = async account => {
-    if (!window.confirm(`Remove product admin access for ${account.name}?`)) return;
+  const confirmRevokeStaff = async () => {
+    if (busy || !staffToRevoke) return;
     setBusy(true);
     try {
-      await api.delete(`/api/admin/staff/${account._id}`);
+      await api.delete(`/api/admin/staff/${staffToRevoke._id}`);
       toast.success("Product admin access removed");
+      setStaffToRevoke(null);
       setViewingStaff(null);
       await load();
     } catch (err) { toast.error(errorMessage(err)); }
@@ -278,12 +282,13 @@ export default function Admin() {
     } catch (err) { toast.error(errorMessage(err)); }
     finally { setBusy(false); }
   };
-  const deleteProduct = async product => {
-    if (!window.confirm(`Delete ${product.name}? This removes it from the storefront.`)) return;
+  const confirmDeleteProduct = async () => {
+    if (busy || !productToDelete) return;
     setBusy(true);
     try {
-      await api.delete(`/api/admin/products/${product._id}`);
+      await api.delete(`/api/admin/products/${productToDelete._id}`);
       toast.success("Product deleted");
+      setProductToDelete(null);
       await load();
       await refreshProducts();
     } catch (err) { toast.error(errorMessage(err)); }
@@ -321,6 +326,28 @@ export default function Admin() {
   return (
     <div className="admin-layout min-h-screen bg-stone-50 text-stone-800 lg:flex">
       {promoToDelete && <DeletePromoModal promo={promoToDelete} busy={busy} onCancel={() => setPromoToDelete(null)} onConfirm={() => deletePromo(promoToDelete)} />}
+      {productToDelete && (
+        <ConfirmDialog
+          title="Delete product?"
+          description={<>“{productToDelete.name}” will be permanently deleted and removed from the storefront. This cannot be undone.</>}
+          confirmLabel="Delete product"
+          busyLabel="Deleting…"
+          busy={busy}
+          onCancel={() => setProductToDelete(null)}
+          onConfirm={confirmDeleteProduct}
+        />
+      )}
+      {staffToRevoke && (
+        <ConfirmDialog
+          title="Remove product admin access?"
+          description={<>“{staffToRevoke.name}” will no longer be able to sign in to manage products or categories.</>}
+          confirmLabel="Remove access"
+          busyLabel="Removing…"
+          busy={busy}
+          onCancel={() => setStaffToRevoke(null)}
+          onConfirm={confirmRevokeStaff}
+        />
+      )}
       <aside className="bg-green-950 text-white p-4 sm:p-6 lg:w-60 lg:min-h-screen shrink-0">
         <Link to="/" className="text-2xl font-semibold">Ayurvedic<span className="block text-xs tracking-widest uppercase text-green-200 mt-2">{isAdmin ? "Project administration" : "Product administration"}</span></Link>
         <nav aria-label="Admin sections" className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-1 gap-2 mt-5 lg:mt-8">
@@ -376,7 +403,7 @@ export default function Admin() {
                 <button disabled={busy || resetPassword.length < 8} onClick={resetStaffPassword} className={`${buttonStyle} mt-3`}>{busy ? "Saving…" : "Reset password"}</button>
               </div>
               <div className="mt-6 flex flex-wrap items-center justify-between gap-3 border-t border-stone-200 pt-5">
-                <button type="button" disabled={busy} onClick={() => revokeStaff(viewingStaff)} className="text-red-700 disabled:opacity-50">Revoke access</button>
+                <button type="button" disabled={busy} onClick={() => setStaffToRevoke(viewingStaff)} className="text-red-700 disabled:opacity-50">Revoke access</button>
                 <button type="button" disabled={busy} onClick={() => setViewingStaff(null)} className="px-4 py-2 disabled:opacity-50">Close</button>
               </div>
             </div>
@@ -392,8 +419,11 @@ export default function Admin() {
           </>}
           {tab === "Products" && <>
             <div className="flex flex-wrap justify-between gap-3 mb-6"><input aria-label="Search products" placeholder="Search products…" value={search} onChange={e => setSearch(e.target.value)} className={`${inputStyle} max-w-sm`} /><button disabled={busy || uploading} className={buttonStyle} onClick={() => { setEditing(null); setForm(emptyProduct); setShowForm(true); }}>+ Add product</button></div>
-            {showForm && <form onSubmit={saveProduct} className="bg-white rounded-xl border border-stone-200 p-4 sm:p-6 mb-6 space-y-4">
-              <h2 className="text-xl font-semibold">{editing ? "Edit product" : "New product"}</h2>
+            {showForm && (
+            <div role="presentation" className="fixed inset-0 z-[70] flex items-center justify-center bg-black/40 p-4" onClick={() => { if (!busy && !uploading) setShowForm(false); }}>
+            <div role="dialog" aria-modal="true" aria-labelledby="product-form-title" onClick={event => event.stopPropagation()} className="w-full max-w-2xl max-h-[90dvh] overflow-y-auto rounded-xl bg-white p-4 shadow-2xl sm:p-6">
+            <form onSubmit={saveProduct} className="space-y-4">
+              <h2 id="product-form-title" className="text-xl font-semibold">{editing ? "Edit product" : "New product"}</h2>
               <div className="grid sm:grid-cols-2 gap-4">
                 {[["name", "Product name"], ["price", "Regular price"], ["offerPrice", "Sale price"]].map(([key, label]) => <label key={key} className="block text-sm">{label}<input required maxLength={key === "name" ? 150 : key === "category" ? 60 : undefined} type={key.includes("rice") ? "number" : "text"} min="0" step="0.01" value={form[key]} onChange={e => setForm({ ...form, [key]: e.target.value })} className={inputStyle} /></label>)}
               </div>
@@ -439,9 +469,12 @@ export default function Admin() {
                 <p className="mt-1 text-sm text-stone-600">Display this product's image, name and price in the top homepage slider while it is in stock. Uncheck to remove it from the banner.</p>
               </div>
               <div className="flex flex-wrap gap-3"><button disabled={busy || uploading} className={buttonStyle}>{busy ? "Saving…" : "Save product"}</button><button type="button" disabled={busy || uploading} onClick={() => setShowForm(false)} className="px-4 py-2">Cancel</button></div>
-            </form>}
+            </form>
+            </div>
+            </div>
+            )}
             <div className="overflow-x-auto bg-white rounded-xl border border-stone-200"><table className="admin-table w-full text-left text-sm"><thead className="bg-stone-100"><tr>{["Product", "Category", "Price", "Availability", "Highlights", "Actions"].map(label => <th key={label} className="p-4">{label}</th>)}</tr></thead><tbody>
-              {products.filter(p => p.name.toLowerCase().includes(search.toLowerCase())).map(p => <tr key={p._id} className="border-t border-stone-100"><td data-label="Product" className="p-4"><div className="flex items-center gap-3"><img src={p.image[0]} alt="" className="w-12 h-12 rounded object-cover" /><span>{p.name}</span></div></td><td data-label="Category" className="p-4">{p.category}</td><td data-label="Price" className="p-4">{getProductPrice(p).toFixed(2)}</td><td data-label="Availability" className="p-4"><span className={`rounded-full px-3 py-1 whitespace-nowrap ${p.inStock ? "bg-green-100 text-green-800" : "bg-stone-100 text-stone-500"}`}>{p.inStock ? "In stock" : "Out of stock"}</span></td><td data-label="Highlights" className="p-4"><div className="flex flex-wrap gap-1">{p.isBestSeller && <span className="rounded-full bg-amber-100 px-2 py-1 text-xs whitespace-nowrap text-amber-800">Best seller</span>}{p.showInBanner && <span className="rounded-full bg-green-100 px-2 py-1 text-xs whitespace-nowrap text-green-800">Banner</span>}{!p.isBestSeller && !p.showInBanner && <span className="text-xs text-stone-400">—</span>}</div></td><td data-label="Actions" className="p-4 whitespace-nowrap"><button disabled={busy || uploading} onClick={() => editProduct(p)} className="text-green-800 mr-4">Edit</button><button disabled={busy || uploading} onClick={() => deleteProduct(p)} className="text-red-700">Delete</button></td></tr>)}
+              {products.filter(p => p.name.toLowerCase().includes(search.toLowerCase())).map(p => <tr key={p._id} className="border-t border-stone-100"><td data-label="Product" className="p-4"><div className="flex items-center gap-3"><img src={p.image[0]} alt="" className="w-12 h-12 rounded object-cover" /><span>{p.name}</span></div></td><td data-label="Category" className="p-4">{p.category}</td><td data-label="Price" className="p-4">{getProductPrice(p).toFixed(2)}</td><td data-label="Availability" className="p-4"><span className={`rounded-full px-3 py-1 whitespace-nowrap ${p.inStock ? "bg-green-100 text-green-800" : "bg-stone-100 text-stone-500"}`}>{p.inStock ? "In stock" : "Out of stock"}</span></td><td data-label="Highlights" className="p-4"><div className="flex flex-wrap gap-1">{p.isBestSeller && <span className="rounded-full bg-amber-100 px-2 py-1 text-xs whitespace-nowrap text-amber-800">Best seller</span>}{p.showInBanner && <span className="rounded-full bg-green-100 px-2 py-1 text-xs whitespace-nowrap text-green-800">Banner</span>}{!p.isBestSeller && !p.showInBanner && <span className="text-xs text-stone-400">—</span>}</div></td><td data-label="Actions" className="p-4 whitespace-nowrap"><button disabled={busy || uploading} onClick={() => editProduct(p)} className="text-green-800 mr-4">Edit</button><button disabled={busy || uploading} onClick={() => setProductToDelete(p)} className="text-red-700">Delete</button></td></tr>)}
               {!products.some(p => p.name.toLowerCase().includes(search.toLowerCase())) && <tr><td colSpan={6} className="p-10 text-center text-stone-500">{search ? "No matching products." : "No products yet. Add your first product to publish it in the store."}</td></tr>}
             </tbody></table></div>
           </>}
